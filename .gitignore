@@ -1,0 +1,36 @@
+# Secrets — NEVER commit real credentials
+.env
+.env.local
+*.pem
+*.key
+
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+data/scripts/_tmp/
+
+# Large regenerable source/intermediate rasters and binaries — each is
+# reproducible via its data/scripts/download_*.py or process_*.py script
+# from a real credentialed source; not tracked to keep the repo clonable.
+# The small PNG/JSON/GeoJSON outputs derived from these (already copied
+# into frontend/public/data/ for the running demo) ARE tracked.
+data/raw/landcover/*.tif
+data/raw/dem/*.tif
+data/raw/rainfall/gsmap/
+data/raw/rainfall/imd-rmc-mumbai/
+data/raw/rainfall/Mumbai - Radar_files/
+data/processed/landcover/*.tif
+data/processed/dem/*.tif
+data/processed/flood_model/*.tif
+
+# Claude Code local runtime state (not project source)
+.claude/scheduled_tasks.lock
+
+# OS
+.DS_Store
+Thumbs.db

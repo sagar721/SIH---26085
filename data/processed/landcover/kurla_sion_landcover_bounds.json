@@ -1,0 +1,1 @@
+{"zone_id": "kurla_sion", "bounds_wgs84": {"west": 72.8527, "south": 19.051, "east": 72.9027, "north": 19.101}, "image": "kurla_sion_landcover.png", "source": "ESA WorldCover 10m v200 (2021)", "class_pixel_counts": {"10": 67865, "30": 10656, "40": 11479, "50": 241458, "60": 11532, "80": 12908, "90": 7, "95": 4095}, "generated_at": "2026-09-08T06:49:47.319167+00:00"}

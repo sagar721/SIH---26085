@@ -1,0 +1,56 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    --background: 220 14% 4%; /* Dark gray/blue for professional dashboard */
+    --foreground: 210 40% 98%;
+    
+    --card: 220 14% 10%;
+    --card-foreground: 210 40% 98%;
+    
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+    
+    --border: 217 14% 20%;
+    
+    /* Semantic Colors */
+    --cyan: 190 90% 50%;
+    --red: 0 84% 60%;
+    --amber: 38 92% 50%;
+    --green: 142 71% 45%;
+    --gray: 220 14% 30%;
+  }
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  overflow: hidden; /* App-like layout */
+}
+
+/* MapLibre specific overrides for dark mode */
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  z-index: 10 !important;
+}
+
+/* Custom scrollbar for data panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border)); 
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5); 
+}
