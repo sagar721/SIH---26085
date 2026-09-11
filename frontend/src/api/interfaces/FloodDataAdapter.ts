@@ -9,6 +9,9 @@ export interface FloodRiskSummary {
   overallRisk: 'LOW' | 'MODERATE' | 'HIGH' | 'SEVERE';
   peakRainfallMmHr: number;
   maxDepthMeters: number;
+  /** False when there was no rainfall row for the requested timestamp — distinct
+   * from a confirmed 0mm/hr reading (disaster-readiness audit item 1.1). */
+  rainfallDataAvailable: boolean;
 }
 
 export interface FloodDataAdapter {

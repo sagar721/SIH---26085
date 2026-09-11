@@ -24,8 +24,21 @@ class RainfallDataService {
   async loadData(): Promise<ProcessedRainfallRow[]> {
     if (this.data) return this.data;
     if (this.loadPromise) return this.loadPromise;
+    return this.fetchAndCache();
+  }
 
-    this.loadPromise = fetch('/data/rainfall/mumbai_processed_rainfall.csv')
+  /** Forces a fresh fetch, bypassing the in-memory cache — used when
+   * rainfall_refresh_status.json reports a newer latest_data_timestamp_utc
+   * than what's currently loaded, so a long-lived tab picks up new hours
+   * without a manual page reload. */
+  async refresh(): Promise<ProcessedRainfallRow[]> {
+    this.data = null;
+    this.loadPromise = null;
+    return this.fetchAndCache();
+  }
+
+  private fetchAndCache(): Promise<ProcessedRainfallRow[]> {
+    this.loadPromise = fetch('/data/rainfall/mumbai_processed_rainfall.csv', { cache: 'no-store' })
       .then(res => res.text())
       .then(csv => {
         const lines = csv.trim().split('\n');
@@ -78,8 +91,18 @@ class RainfallDataService {
 
   async getRowForTime(timeIso: string): Promise<ProcessedRainfallRow | null> {
     const data = await this.loadData();
-    // exact match or closest
-    return data.find(d => d.timestamp_utc === timeIso) || data[0] || null;
+    // Exact match only — deliberately does NOT silently fall back to the
+    // first row when the requested timestamp isn't found. A silent
+    // fallback would show real-looking data for the wrong hour with no
+    // indication anything was off (disaster-readiness audit item 1.1:
+    // "no data" must never be indistinguishable from "here's some data").
+    return data.find(d => d.timestamp_utc === timeIso) ?? null;
+  }
+
+  /** Most recent timestamp in the loaded dataset, or null if nothing is loaded. */
+  getLatestTimestamp(): string | null {
+    const data = this.data ?? [];
+    return data.length > 0 ? data[data.length - 1].timestamp_utc : null;
   }
 }
 

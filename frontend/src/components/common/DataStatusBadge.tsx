@@ -21,18 +21,18 @@ export const DataStatusBadge: React.FC<DataStatusBadgeProps> = ({ status, classN
     case 'MODEL_DERIVED':
     case 'MODELLED':
     case 'SIMULATED':
-      colorClass = 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      colorClass = 'bg-blue-500/10 text-blue-700 border-blue-500/20';
       break;
     case 'INFERRED':
-      colorClass = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+      colorClass = 'bg-amber-500/10 text-amber-700 border-amber-500/20';
       break;
     case 'MOCK':
     case 'SYNTHETIC':
-      colorClass = 'bg-purple-500/10 text-purple-400 border-purple-500/20';
+      colorClass = 'bg-purple-500/10 text-purple-700 border-purple-500/20';
       break;
     case 'UNAVAILABLE':
     default:
-      colorClass = 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+      colorClass = 'bg-gray-500/10 text-gray-600 border-gray-500/20';
   }
 
   return (

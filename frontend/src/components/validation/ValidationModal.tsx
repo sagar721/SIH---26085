@@ -45,6 +45,14 @@ interface S1Status {
   status?: string;
 }
 
+interface WaterDetectionResult {
+  status?: string;
+  scene?: { sensing_date?: string; product?: string };
+  event_search?: { conclusion?: string };
+  results?: { iou: number; precision: number; recall: number; f1: number };
+  known_limitations?: string[];
+}
+
 const METRICS = [
   { id: 'iou', label: 'IoU (Intersection over Union)', formula: '|Predicted ∩ Observed| / |Predicted ∪ Observed|' },
   { id: 'precision', label: 'Precision', formula: 'True Positive Area / (True Positive + False Positive Area)' },
@@ -57,6 +65,7 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
   const [sentinelStatus, setSentinelStatus] = useState<BlockedStatus | null>(null);
   const [sentinelScenes, setSentinelScenes] = useState<S1Status | null>(null);
   const [ifiEvents, setIfiEvents] = useState<IfiEvent[] | null>(null);
+  const [waterDetection, setWaterDetection] = useState<WaterDetectionResult | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -64,6 +73,7 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
     fetch('/data/validation/sentinel1_status.json').then((r) => r.json()).then(setSentinelStatus).catch(() => setSentinelStatus(null));
     fetch('/data/validation/kurla_sion_sentinel1_scenes.json').then((r) => (r.ok ? r.json() : null)).then(setSentinelScenes).catch(() => setSentinelScenes(null));
     fetch('/data/validation/mumbai_ifi_events.json').then((r) => (r.ok ? r.json() : null)).then(setIfiEvents).catch(() => setIfiEvents(null));
+    fetch('/data/validation/sentinel1_water_detection_validation.json').then((r) => (r.ok ? r.json() : null)).then(setWaterDetection).catch(() => setWaterDetection(null));
   }, [isOpen]);
 
   const sentinelAuthOk = sentinelStatus?.status?.startsWith('AUTHENTICATED') ?? false;
@@ -76,15 +86,15 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
       onClose={onClose}
       title="Model Validation"
       subtitle="Honest validation status against real historical flood observations — no scores are shown until a real comparison has actually been run"
-      icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+      icon={<CheckCircle2 className="w-5 h-5 text-emerald-700" />}
       maxWidth="max-w-5xl"
     >
       <div className="space-y-6">
         {/* Honesty banner */}
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3">
-          <AlertOctagon className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <AlertOctagon className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
           <div className="text-xs space-y-1">
-            <p className="font-semibold text-amber-400">No hydraulic model has been calibrated or validated yet</p>
+            <p className="font-semibold text-amber-700">No hydraulic model has been calibrated or validated yet</p>
             <p className="text-muted-foreground leading-relaxed">
               FLOODWATCH's current flood depth/extent is a transparent deterministic proxy (rainfall × scenario multiplier ×
               drainage-blockage factor) — see the Data Provenance panel. It has not been compared against any real observed
@@ -132,7 +142,7 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
               </p>
               {ifiStatus?.detail && <p>{ifiStatus.detail}</p>}
               {ifiStatus?.no_credentials_required && (
-                <p className="text-emerald-400">No credentials are required for this dataset — only a retry once Zenodo's service recovers.</p>
+                <p className="text-emerald-700">No credentials are required for this dataset — only a retry once Zenodo's service recovers.</p>
               )}
             </div>
           )}
@@ -152,25 +162,22 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
             <div className="text-xs space-y-2.5">
               <div className="grid grid-cols-3 gap-2">
                 <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-                  <span className="block text-emerald-400 font-bold">Auth</span>
+                  <span className="block text-emerald-700 font-bold">Auth</span>
                   <span className="text-[10px] text-muted-foreground">VERIFIED</span>
                 </div>
                 <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-                  <span className="block text-emerald-400 font-bold">Search</span>
+                  <span className="block text-emerald-700 font-bold">Search</span>
                   <span className="text-[10px] text-muted-foreground">{sentinelScenes?.scenes_found?.length ?? 0} real scenes</span>
                 </div>
-                <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-center">
-                  <span className="block text-amber-400 font-bold">Processing</span>
-                  <span className="text-[10px] text-muted-foreground">NOT RUN</span>
+                <div className={`p-2 rounded-lg border text-center ${waterDetection ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                  <span className={`block font-bold ${waterDetection ? 'text-emerald-700' : 'text-amber-700'}`}>Processing</span>
+                  <span className="text-[10px] text-muted-foreground">{waterDetection ? 'RUN (see below)' : 'NOT RUN'}</span>
                 </div>
               </div>
               <p className="text-muted-foreground">
                 Real Copernicus Data Space authentication succeeded and a real catalog search found{' '}
                 {sentinelScenes?.scenes_found?.length ?? 0} genuine Sentinel-1 scenes over Kurla-Sion in the last 90 days.
-                A partial download (5MB) was verified as a real ZIP/SAFE archive — this also caught and fixed a
-                cross-host redirect bug where CDSE's download endpoint was silently dropping the auth header.
-                The full scene (~1GB) was not downloaded and VV change-detection / IoU / Precision / Recall / F1
-                have NOT been run — no accuracy numbers are fabricated.
+                A full real scene (2017-08-17, 1.07GB, verified valid) was downloaded and processed this session.
               </p>
               {sentinelScenes?.scenes_found?.slice(0, 3).map((s, i) => (
                 <div key={i} className="p-2 rounded bg-muted/40 border border-border/60 flex justify-between font-mono text-[10px]">
@@ -178,6 +185,51 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
                   <span className="text-muted-foreground shrink-0 ml-2">{s.sensing_date?.split('T')[0]}</span>
                 </div>
               ))}
+
+              {waterDetection?.results && (
+                <div className="mt-3 p-3 rounded-lg bg-background/60 border border-border/70">
+                  <div className="flex items-start gap-2 mb-2.5 p-2 rounded bg-amber-500/10 border border-amber-500/25">
+                    <AlertOctagon className="w-3.5 h-3.5 text-amber-700 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-amber-700 leading-relaxed">
+                      <strong>Scope:</strong> this validates SAR WATER DETECTION against real OSM permanent-water
+                      polygons — NOT flood-extent validation. {waterDetection.event_search?.conclusion}
+                    </p>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-2">
+                    Real scene: {waterDetection.scene?.sensing_date?.split('T')[0]} · Otsu threshold on
+                    median-filtered VV amplitude vs. real OSM water polygons, same AOI grid.
+                  </p>
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="p-2 rounded bg-muted/40 border border-border/60">
+                      <p className="text-[9px] text-muted-foreground uppercase">IoU</p>
+                      <p className="font-mono font-bold text-foreground">{waterDetection.results.iou.toFixed(3)}</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/40 border border-border/60">
+                      <p className="text-[9px] text-muted-foreground uppercase">Precision</p>
+                      <p className="font-mono font-bold text-foreground">{waterDetection.results.precision.toFixed(3)}</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/40 border border-border/60">
+                      <p className="text-[9px] text-muted-foreground uppercase">Recall</p>
+                      <p className="font-mono font-bold text-foreground">{waterDetection.results.recall.toFixed(3)}</p>
+                    </div>
+                    <div className="p-2 rounded bg-muted/40 border border-border/60">
+                      <p className="text-[9px] text-muted-foreground uppercase">F1</p>
+                      <p className="font-mono font-bold text-foreground">{waterDetection.results.f1.toFixed(3)}</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2.5">
+                    These scores are genuinely poor (Precision {waterDetection.results.precision.toFixed(3)}) — naive
+                    global Otsu thresholding over-flags a dense urban AOI where real water is a rare class (~1.2% of
+                    pixels) and building layover/shadow produces widespread false low-backscatter. That is an honest,
+                    explained result, not a hidden failure — see Known Limitations below.
+                  </p>
+                  {waterDetection.known_limitations && (
+                    <ul className="text-[10px] text-muted-foreground list-disc list-inside mt-2 space-y-0.5">
+                      {waterDetection.known_limitations.map((l) => <li key={l}>{l}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-xs text-muted-foreground space-y-2">
@@ -201,14 +253,18 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
         <div className="p-4 rounded-xl bg-card border border-border">
           <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
             <Calculator className="w-4 h-4 text-cyan" />
-            <span>Metrics This System Will Report Once Validation Data Exists</span>
+            <span>Metric Definitions</span>
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             {METRICS.map((m) => (
               <div key={m.id} className="p-3 rounded-lg bg-muted/30 border border-border/50">
                 <span className="font-semibold text-foreground block mb-1">{m.label}</span>
                 <code className="text-[10px] text-cyan">{m.formula}</code>
-                <p className="text-muted-foreground mt-1.5">Not yet computed — no observed flood extent is available to compare against.</p>
+                <p className="text-muted-foreground mt-1.5">
+                  {waterDetection?.results
+                    ? 'Computed once (see SAR water-detection result above) — still NOT computed for flood-extent, since no observed flood extent exists for any real Mumbai event checked.'
+                    : 'Not yet computed — no observed flood extent is available to compare against.'}
+                </p>
               </div>
             ))}
           </div>

@@ -14,6 +14,12 @@ __pycache__/
 *.pyc
 data/scripts/_tmp/
 
+# Real downloaded Sentinel-1 GRD scenes (~1GB each) — regenerable via
+# data/scripts/sentinel1_process_scene.py / sentinel1_validation.py against
+# real CDSE credentials; never committed. The derived validation JSON
+# result (small, real numbers) IS tracked.
+data/raw/validation/sentinel1_scenes/
+
 # Large regenerable source/intermediate rasters and binaries — each is
 # reproducible via its data/scripts/download_*.py or process_*.py script
 # from a real credentialed source; not tracked to keep the repo clonable.
@@ -29,7 +35,7 @@ data/processed/dem/*.tif
 data/processed/flood_model/*.tif
 
 # Claude Code local runtime state (not project source)
-.claude/scheduled_tasks.lock
+.claude/
 
 # OS
 .DS_Store

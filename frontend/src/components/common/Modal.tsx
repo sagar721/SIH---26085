@@ -30,7 +30,14 @@ export const Modal: React.FC<ModalProps> = ({
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      // '' removes the inline override, restoring the stylesheet's
+      // `overflow: hidden` (index.css — this is a fixed, full-viewport
+      // app-like layout with no body scroll by design). The previous value
+      // here, 'unset', is NOT a no-op for a non-inherited property like
+      // overflow — per the CSS spec it resolves to 'initial' (visible),
+      // which briefly overrode the stylesheet and made body scrollable on
+      // every modal close (perf investigation: a real, confirmed bug).
+      document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -49,12 +56,22 @@ export const Modal: React.FC<ModalProps> = ({
             onClick={onClose}
           />
 
-          {/* Modal Container */}
+          {/* Modal Container. Exit uses a short, fixed-duration tween instead
+              of the entrance spring — a physics-based spring has no fixed
+              settle time and, combined with any main-thread contention
+              (e.g. the map's initial load), could take far longer than
+              intended to actually finish unmounting (perf investigation:
+              measured 1-2s+ in practice). A deterministic ~150ms exit keeps
+              the close snappy regardless of what else the page is doing. */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 12 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            variants={{
+              hidden: { opacity: 0, scale: 0.96, y: 12 },
+              visible: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+              exit: { opacity: 0, scale: 0.96, y: 12, transition: { duration: 0.15, ease: 'easeIn' } },
+            }}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             className={`relative w-full ${maxWidth} max-h-[90vh] bg-card border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col z-10`}
           >
             {/* Header */}

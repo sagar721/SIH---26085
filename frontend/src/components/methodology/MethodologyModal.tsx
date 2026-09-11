@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal } from '../common/Modal';
 import { DataStatusBadge } from '../common/DataStatusBadge';
-import { ShieldCheck, AlertOctagon } from 'lucide-react';
+import { ShieldCheck, AlertOctagon, FlaskConical, Siren, ShieldOff } from 'lucide-react';
 import { PROVENANCE_CATALOG } from '../../data/provenanceData';
+import { realAdapter } from '../../api/adapters/RealDataAdapter';
 import type { ProvenanceStatus } from '../../types/provenance';
+
+interface SensitivityReport {
+  perturbation_pct: number;
+  max_pct_change_from_baseline: { citywide: number; kurla_sion: number; hindmata_dadar: number };
+  pilot_zone_rank_ever_flips: boolean;
+  conclusion: string;
+  method: string;
+}
 
 interface MethodologyModalProps {
   isOpen: boolean;
@@ -60,6 +69,18 @@ const CATEGORY_DEFS: CategoryDef[] = [
   },
 ];
 
+// Disaster-readiness audit items that are genuinely infrastructure-dependent
+// or require capabilities beyond a static frontend — disclosed here rather
+// than silently omitted or faked. See RESILIENCE_REPORT.md for the full
+// audit (severity/likelihood/impact/mitigation/effort per item).
+const PRODUCTION_GAPS = [
+  'No real offline capability — a network-loss banner tells you when you\'ve lost connectivity, but nothing is cached for genuinely offline use. Would require a service worker (HIGH effort).',
+  'No integration with real MCGM/NDRF alerting or communication channels — insight on this dashboard does not automatically reach field responders.',
+  'No backend exists yet, so there is no data-integrity signing or access control — a compromised host could serve altered data. Requires real backend infrastructure.',
+  'No denial-of-service protection — that is a hosting/CDN-layer concern, not something addressable in application code.',
+  'The Safe Routing panel is entirely fabricated demo output, not a real routing engine — see the disclaimer on its route result.',
+];
+
 const LIMITATIONS = [
   'The flood-susceptibility formula is an equal-weighted composite of 5 real terrain/landcover factors — documented and reproducible, but not calibrated or fitted against any observed flood depth.',
   'No historical flood extent (Sentinel-1 SAR or otherwise) has been compared to model output — there is no accuracy, IoU, or F1 number anywhere in this system, real or claimed.',
@@ -70,6 +91,13 @@ const LIMITATIONS = [
 ];
 
 export const MethodologyModal: React.FC<MethodologyModalProps> = ({ isOpen, onClose }) => {
+  const [sensitivity, setSensitivity] = useState<SensitivityReport | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    realAdapter.getSensitivityAnalysis().then((data) => setSensitivity(data as unknown as SensitivityReport | null));
+  }, [isOpen]);
+
   const statusCounts = PROVENANCE_CATALOG.reduce<Record<string, number>>((acc, item) => {
     acc[item.status] = (acc[item.status] ?? 0) + 1;
     return acc;
@@ -129,12 +157,68 @@ export const MethodologyModal: React.FC<MethodologyModalProps> = ({ isOpen, onCl
           </p>
         </div>
 
+        {sensitivity && (
+          <div className="p-4 rounded-xl bg-card border border-border">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <FlaskConical className="w-4 h-4 text-cyan" /> Sensitivity Analysis
+              </h4>
+              <DataStatusBadge status="MODELLED" />
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              How much does the susceptibility index's equal-weighting assumption (20% per factor) actually
+              matter? Each of the 5 real factors was perturbed &plusmn;{Math.round(sensitivity.perturbation_pct * 100)}%
+              (renormalized) and the composite recomputed from the same real DEM/landcover/OSM data — a real,
+              reproducible sweep, not a calibration claim.
+            </p>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="p-2 rounded bg-muted/40 border border-border/60">
+                <p className="text-[9px] text-muted-foreground uppercase mb-1">Citywide</p>
+                <p className="text-sm font-bold font-mono text-foreground">&plusmn;{sensitivity.max_pct_change_from_baseline.citywide.toFixed(1)}%</p>
+              </div>
+              <div className="p-2 rounded bg-muted/40 border border-border/60">
+                <p className="text-[9px] text-muted-foreground uppercase mb-1">Kurla-Sion</p>
+                <p className="text-sm font-bold font-mono text-foreground">&plusmn;{sensitivity.max_pct_change_from_baseline.kurla_sion.toFixed(1)}%</p>
+              </div>
+              <div className="p-2 rounded bg-muted/40 border border-border/60">
+                <p className="text-[9px] text-muted-foreground uppercase mb-1">Hindmata-Dadar</p>
+                <p className="text-sm font-bold font-mono text-foreground">&plusmn;{sensitivity.max_pct_change_from_baseline.hindmata_dadar.toFixed(1)}%</p>
+              </div>
+            </div>
+            <p className="text-xs text-foreground mt-3">
+              <strong>{sensitivity.pilot_zone_rank_ever_flips ? 'Not rank-stable: ' : 'Rank-stable: '}</strong>
+              {sensitivity.conclusion}
+            </p>
+          </div>
+        )}
+
         <div className="p-4 rounded-xl bg-card border border-amber-500/30 bg-amber-500/5">
           <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
-            <AlertOctagon className="w-4 h-4 text-amber-400" /> Current system limitations
+            <AlertOctagon className="w-4 h-4 text-amber-700" /> Current system limitations
           </h4>
           <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1.5">
             {LIMITATIONS.map((l) => <li key={l}>{l}</li>)}
+          </ul>
+        </div>
+
+        <div className="p-4 rounded-xl bg-card border border-cyan/30 bg-cyan/5">
+          <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
+            <Siren className="w-4 h-4 text-cyan" /> Quick reference for emergency/field use
+          </h4>
+          <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1.5">
+            <li>The <strong className="text-foreground">Snapshot</strong> badge (top bar) shows this is a fixed historical dataset, not a live feed — check its date before relying on any reading.</li>
+            <li>A red banner appears if you lose internet connectivity or if any data layer fails to load — if you don't see one, connectivity and data loading are working.</li>
+            <li>Anything badged <strong className="text-foreground">SIMULATED</strong> or <strong className="text-foreground">MOCK</strong> (flood depth, safe-routing) is a model proxy, not an observation — never the sole basis for a field decision.</li>
+            <li>Anything badged <strong className="text-foreground">MODELLED</strong> (susceptibility, impact scores) is a transparent formula over real data, not a calibrated or validated prediction.</li>
+          </ul>
+        </div>
+
+        <div className="p-4 rounded-xl bg-card border border-red-500/30 bg-red-500/5">
+          <h4 className="text-sm font-bold text-foreground mb-2 flex items-center gap-1.5">
+            <ShieldOff className="w-4 h-4 text-red-700" /> Known gaps for production/emergency deployment
+          </h4>
+          <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1.5">
+            {PRODUCTION_GAPS.map((l) => <li key={l}>{l}</li>)}
           </ul>
         </div>
       </div>

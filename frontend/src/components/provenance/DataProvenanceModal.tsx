@@ -58,7 +58,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({ isOpen
             <p className="font-semibold text-cyan">SIH26085 Scientific Integrity & Provenance Compliance</p>
             <p className="text-muted-foreground leading-relaxed">
               Every spatial and temporal layer in FLOODWATCH is tagged with its authoritative data provider and operational status.
-              Synthetic and hydrologically inferred layers are explicitly demarcated with <span className="font-mono text-amber-400 bg-amber-400/10 px-1 py-0.5 rounded border border-amber-400/20">[INFERRED]</span> / <span className="font-mono text-purple-400 bg-purple-400/10 px-1 py-0.5 rounded border border-purple-400/20">[SYNTHETIC]</span> badges and are never misrepresented as official municipal records.
+              Synthetic and hydrologically inferred layers are explicitly demarcated with <span className="font-mono text-amber-700 bg-amber-400/10 px-1 py-0.5 rounded border border-amber-400/20">[INFERRED]</span> / <span className="font-mono text-purple-700 bg-purple-400/10 px-1 py-0.5 rounded border border-purple-400/20">[SYNTHETIC]</span> badges and are never misrepresented as official municipal records.
             </p>
           </div>
         </div>
@@ -112,7 +112,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({ isOpen
                       {item.category}
                     </span>
                     <DataStatusBadge status={item.status} />
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-700 border border-blue-500/20">
                       {item.recommendation}
                     </span>
                   </div>

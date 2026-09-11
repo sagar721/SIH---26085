@@ -4,6 +4,7 @@ import { rainfallService } from '../services/RainfallDataService';
 import { mockAdapter } from './MockAdapter';
 import { findContainingFloodZone, filterByBBox } from '../../lib/geo';
 import { PILOT_ZONES } from '../../types';
+import { useDataHealthStore } from '../../stores/useDataHealthStore';
 
 const MCGM_INFRA_LAYERS = [
   '/data/infrastructure/mcgm_health_facilities.geojson',
@@ -23,9 +24,18 @@ function loadStaticGeoJSON(url: string): Promise<FeatureCollection> {
     geojsonCache.set(
       url,
       fetch(url)
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then((data) => {
+          useDataHealthStore.getState().reportSuccess(url);
+          return data;
+        })
         .catch((err) => {
           console.error(`Failed to load ${url}`, err);
+          useDataHealthStore.getState().reportFailure(url, err instanceof Error ? err.message : String(err));
+          geojsonCache.delete(url); // allow a retry on next call rather than caching the failure forever
           return { type: 'FeatureCollection', features: [] } as FeatureCollection;
         })
     );
@@ -150,8 +160,15 @@ export class RealDataAdapter implements FloodDataAdapter {
   }
 
   async getRoadsData(zoneId: string, time: TimePoint, scenarioMultiplier = 1.0, drainageBlockage = 0): Promise<FeatureCollection> {
+    // Reads the SAME risk-scored file getRoadsRiskData() uses (identical
+    // geometry/tags, plus susceptibility_score) rather than a separate,
+    // near-duplicate ~1.3-1.5MB roads.geojson — loadStaticGeoJSON's cache is
+    // keyed by URL, so requesting the same URL here means only one fetch and
+    // one JSON.parse happens no matter how many callers ask for it (perf
+    // investigation: this parse was a measurable contributor to the ~8-10s
+    // of near-100% main-thread usage on zone entry).
     const [roads, floodData] = await Promise.all([
-      loadStaticGeoJSON(`/data/roads/${zoneId}_roads.geojson`),
+      loadStaticGeoJSON(`/data/flood_model/${zoneId}_roads_risk.geojson`),
       mockAdapter.getFloodData(zoneId, time, scenarioMultiplier, drainageBlockage),
     ]);
 
@@ -175,13 +192,13 @@ export class RealDataAdapter implements FloodDataAdapter {
   async getZoneRiskSummary(zoneId: string, time: TimePoint, _scenarioMultiplier = 1.0, _drainageBlockage = 0): Promise<FloodRiskSummary> {
     const row = await rainfallService.getRowForTime(time.timestamp);
     let peak = 0;
-    
+
     if (row) {
       if (zoneId === 'kurla_sion') peak = row.kurla_sion_max_mm_hr;
       else if (zoneId === 'hindmata_dadar') peak = row.hindmata_dadar_max_mm_hr;
     }
 
-    return { overallRisk: 'LOW', peakRainfallMmHr: peak, maxDepthMeters: 0 };
+    return { overallRisk: 'LOW', peakRainfallMmHr: peak, maxDepthMeters: 0, rainfallDataAvailable: row !== null };
   }
 
   // --- City-wide context layers (Mumbai overview) ---
@@ -258,6 +275,19 @@ export class RealDataAdapter implements FloodDataAdapter {
 
   async getSusceptibilityQueryGrid(): Promise<FeatureCollection> {
     return loadStaticGeoJSON('/data/flood_model/mumbai_susceptibility_query_grid.geojson');
+  }
+
+  // Real sensitivity sweep over the susceptibility model's equal-weighting
+  // assumption — see data/scripts/sensitivity_analysis.py.
+  async getSensitivityAnalysis(): Promise<Record<string, unknown> | null> {
+    try {
+      const res = await fetch('/data/flood_model/sensitivity_analysis.json');
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (err) {
+      console.error('Failed to load sensitivity analysis', err);
+      return null;
+    }
   }
 
   // DEM+landcover+waterway-derived flood susceptibility index — MODELLED, not observed/validated.

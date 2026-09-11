@@ -25,6 +25,97 @@ export function computeRainfallAdjustedRisk(susceptibility: number, rainfallMmHr
   return Math.min(1, susceptibility * computeRainfallFactor(rainfallMmHr));
 }
 
+// Scenario Mode <-> Rainfall-Aware Impact Model bridge.
+//
+// The real GSMaP rainfall acquired for this project is a genuinely dry
+// 24-hour window (every hour, both pilot zones: 0.0 mm/hr — verified against
+// the source CSV, not assumed). Multiplying zero by a scenario slider still
+// yields zero, so without this bridge, cranking "Rainfall Multiplier" would
+// visibly do nothing to the rainfall-aware model — a defect that looked like
+// a wiring bug but was actually a data-honesty tradeoff (never silently
+// fabricating a nonzero "observed" reading to fill the gap).
+//
+// The fix: Scenario Mode is reframed as "simulate a storm at N times the
+// official BRIMSTOWAD design intensity" rather than "multiply today's real
+// reading." At the default 1.0x position it changes nothing and the model
+// runs on real OBSERVED rainfall, exactly as before. Moving the slider away
+// from 1.0x explicitly switches the model's rainfall input to a SIMULATED
+// design-storm intensity — never presented as observed.
+export function isScenarioActive(scenarioMultiplier: number): boolean {
+  return Math.abs(scenarioMultiplier - 1.0) > 1e-9;
+}
+
+export function getEffectiveRainfallMmHr(realRainfallMmHr: number, scenarioMultiplier: number): number {
+  return isScenarioActive(scenarioMultiplier) ? scenarioMultiplier * BRIMSTOWAD_DESIGN_INTENSITY_MM_HR : realRainfallMmHr;
+}
+
+// Shared with MockAdapter.computeBaseDepthMeters — the single definition of
+// "how much of nominal drainage capacity remains" given a % blockage. Pulled
+// out here so the Situation Strip's capacity-margin statement (below) and
+// the flood-depth simulator can never drift apart into two different
+// notions of "capacity".
+export function computeCapacityFraction(drainageBlockagePct: number): number {
+  return Math.max(0.2, 1 - drainageBlockagePct / 150);
+}
+
+export interface CapacityMargin {
+  rainfallFactor: number;
+  capacity: number;
+  excess: number; // > 0 means currently exceeding capacity
+  isExceeding: boolean;
+  marginPct: number; // |excess or headroom| as a % of capacity, always >= 0
+}
+
+export function computeCapacityMargin(effectiveRainfallMmHr: number, drainageBlockagePct: number): CapacityMargin {
+  const rainfallFactor = computeRainfallFactor(effectiveRainfallMmHr);
+  const capacity = computeCapacityFraction(drainageBlockagePct);
+  const excess = rainfallFactor - capacity;
+  return {
+    rainfallFactor,
+    capacity,
+    excess,
+    isExceeding: excess > 0,
+    marginPct: capacity > 0 ? Math.abs(excess / capacity) * 100 : 0,
+  };
+}
+
+export interface RainfallTrendPoint { rainfallMmHr: number; minutesFromNow: number }
+
+// Honest time-to-threshold estimate for the Situation Strip headline
+// ("...exceeds capacity in ~N min"). This is a genuine linear-regression
+// extrapolation of a REAL recent rainfall trend, projected forward against
+// the same capacity formula above — never a fabricated countdown. Returns
+// null whenever the trend doesn't actually support a projection: too few
+// points, a flat/falling trend, or capacity already exceeded (nothing left
+// to project toward). Called out explicitly in
+// FLOODWATCH_V3_DESIGN_SPEC.md §4.2.
+export function estimateMinutesToCapacityThreshold(
+  trend: RainfallTrendPoint[],
+  drainageBlockagePct: number
+): number | null {
+  if (trend.length < 3) return null;
+  const capacity = computeCapacityFraction(drainageBlockagePct);
+
+  const xs = trend.map((p) => p.minutesFromNow);
+  const ys = trend.map((p) => computeRainfallFactor(p.rainfallMmHr));
+  const n = xs.length;
+  const meanX = xs.reduce((a, b) => a + b, 0) / n;
+  const meanY = ys.reduce((a, b) => a + b, 0) / n;
+  const num = xs.reduce((a, x, i) => a + (x - meanX) * (ys[i] - meanY), 0);
+  const den = xs.reduce((a, x) => a + (x - meanX) ** 2, 0);
+  if (den === 0) return null;
+  const slope = num / den; // rainfallFactor change per minute
+  const intercept = meanY - slope * meanX;
+
+  const currentFactor = ys[ys.length - 1];
+  if (currentFactor >= capacity) return null; // already exceeding — nothing to project
+  if (slope <= 1e-6) return null; // flat or falling — no honest ETA to give
+
+  const crossingMinute = (capacity - intercept) / slope;
+  const minutesFromNow = crossingMinute - xs[xs.length - 1];
+  return minutesFromNow > 0 && minutesFromNow < 24 * 60 ? Math.round(minutesFromNow) : null;
+}
+
 export interface ScoredFeatureSummary {
   count: number;
   meanAdjustedRisk: number;

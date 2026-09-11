@@ -23,7 +23,7 @@ interface AnalyticsModalProps {
 export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose }) => {
   const { activeZone, setActiveZoneId } = useZoneStore();
   const { scenarioMultiplier, drainageBlockage, timeIndex, availableTimestamps } = useSimulationStore();
-  const { roadsRisk, infraRisk, roadImpact, infraExposure, zoneSeverity, realRainfallMmHr } = useRainfallAwareRisk();
+  const { roadsRisk, infraRisk, roadImpact, infraExposure, zoneSeverity, realRainfallMmHr, effectiveRainfallMmHr, scenarioActive } = useRainfallAwareRisk();
   const [activeTab, setActiveTab] = useState<'trends' | 'comparison' | 'vulnerability'>('trends');
   const [zoneInfra, setZoneInfra] = useState<Record<string, Feature[]>>({});
 
@@ -160,9 +160,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               <div className="p-3.5 rounded-xl bg-card border border-border">
                 <div className="flex items-center justify-between text-muted-foreground text-xs">
                   <span>24h Total Rainfall</span>
-                  <TrendingUp className="w-4 h-4 text-blue-400" />
+                  <TrendingUp className="w-4 h-4 text-blue-700" />
                 </div>
-                <div className="text-xl font-bold font-mono text-blue-400 mt-2">
+                <div className="text-xl font-bold font-mono text-blue-700 mt-2">
                   {total24h.toFixed(1)} <span className="text-xs font-sans text-muted-foreground">mm</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-1 block">Cumulative volume</span>
@@ -171,9 +171,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               <div className="p-3.5 rounded-xl bg-card border border-border">
                 <div className="flex items-center justify-between text-muted-foreground text-xs">
                   <span>Max Simulated Depth</span>
-                  <AlertTriangle className="w-4 h-4 text-amber-400" />
+                  <AlertTriangle className="w-4 h-4 text-amber-700" />
                 </div>
-                <div className="text-xl font-bold font-mono text-amber-400 mt-2">
+                <div className="text-xl font-bold font-mono text-amber-700 mt-2">
                   {maxDepth.toFixed(2)} <span className="text-xs font-sans text-muted-foreground">m</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-1 block">Depression bottleneck</span>
@@ -182,9 +182,9 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
               <div className="p-3.5 rounded-xl bg-card border border-border">
                 <div className="flex items-center justify-between text-muted-foreground text-xs">
                   <span>Data Points (hours)</span>
-                  <TrendingUp className="w-4 h-4 text-purple-400" />
+                  <TrendingUp className="w-4 h-4 text-purple-700" />
                 </div>
-                <div className="text-xl font-bold font-mono text-purple-400 mt-2">
+                <div className="text-xl font-bold font-mono text-purple-700 mt-2">
                   {timeSeries.length} <span className="text-xs font-sans text-muted-foreground">hrs</span>
                 </div>
                 <span className="text-[10px] text-muted-foreground mt-1 block">Real GSMaP hourly records loaded</span>
@@ -310,7 +310,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                     {' '}{BRIMSTOWAD_DESIGN_INTENSITY_MM_HR}mm/h design intensity. Not the scenario slider.
                   </p>
                 </div>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">MODELLED</span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 border border-blue-500/20 shrink-0">MODELLED</span>
               </div>
 
               {/* Current-hour KPI row */}
@@ -319,7 +319,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Zone Severity (now)</p>
                   <p className={`text-sm font-bold font-mono ${
                     zoneSeverity.label === 'SEVERE' ? 'text-red' : zoneSeverity.label === 'HIGH' ? 'text-amber' :
-                    zoneSeverity.label === 'MODERATE' ? 'text-yellow-500' : 'text-green'
+                    zoneSeverity.label === 'MODERATE' ? 'text-yellow-700' : 'text-green'
                   }`}>{zoneSeverity.label} <span className="text-muted-foreground font-normal">({zoneSeverity.score.toFixed(2)})</span></p>
                 </div>
                 <div className="p-2.5 rounded-lg bg-muted/40 border border-border/60">
@@ -372,8 +372,14 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                   <div className="flex items-center gap-1.5"><span className="w-3 h-1 bg-red rounded inline-block" /><span className="text-muted-foreground">Zone Severity</span></div>
                   <div className="flex items-center gap-1.5"><span className="w-3 h-1 bg-cyan rounded inline-block" /><span className="text-muted-foreground">Road Impact</span></div>
                   <div className="flex items-center gap-1.5"><span className="w-3 h-1 rounded inline-block" style={{ background: '#a78bfa' }} /><span className="text-muted-foreground">Infra Exposure (weighted)</span></div>
-                  <div className="flex items-center gap-1.5 ml-auto"><span className="w-2.5 h-2.5 rounded-full border-2 border-amber-400" /><span className="text-muted-foreground">Timeline position ({realRainfallMmHr.toFixed(1)} mm/h now)</span></div>
+                  <div className="flex items-center gap-1.5 ml-auto"><span className="w-2.5 h-2.5 rounded-full border-2 border-amber-400" /><span className="text-muted-foreground">Timeline position ({realRainfallMmHr.toFixed(1)} mm/h observed now)</span></div>
                 </div>
+                {scenarioActive && (
+                  <p className="text-[10px] text-amber-700 mt-1.5">
+                    Scenario Mode active — "now" KPIs above use a SIMULATED {effectiveRainfallMmHr.toFixed(1)}mm/h design-storm
+                    intensity, not the real {realRainfallMmHr.toFixed(1)}mm/h reading. The 24h trend line stays real/OBSERVED.
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -438,7 +444,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
             <div className="p-4 rounded-xl bg-card border border-border">
               <div className="flex items-center justify-between mb-1">
                 <h4 className="text-sm font-bold text-foreground">Real Critical Infrastructure — {activeZone.name}</h4>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold">
+                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-500/10 text-blue-700 border border-blue-500/20 font-semibold">
                   LOCATIONS: REAL &middot; STATUS: SIMULATED
                 </span>
               </div>
@@ -469,11 +475,11 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ isOpen, onClose 
                           </span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="font-mono text-amber-400">{p.depthMeters}m sim.</span>
+                          <span className="font-mono text-amber-700">{p.depthMeters}m sim.</span>
                           <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider ${
-                            risk === 'CRITICAL' ? 'bg-red-500/15 text-red-400 border border-red-500/30' :
-                            risk === 'AT RISK' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' :
-                            'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            risk === 'CRITICAL' ? 'bg-red-500/15 text-red-700 border border-red-500/30' :
+                            risk === 'AT RISK' ? 'bg-amber-500/15 text-amber-700 border border-amber-500/30' :
+                            'bg-emerald-500/15 text-emerald-700 border border-emerald-500/30'
                           }`}>
                             {risk}
                           </span>

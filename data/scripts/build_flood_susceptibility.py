@@ -53,7 +53,12 @@ def normalize(arr: np.ndarray) -> np.ndarray:
     return (arr - lo) / (hi - lo)
 
 
-def main():
+def load_factor_scores():
+    """Loads and computes the 5 real per-pixel factor score arrays (each
+    already normalized 0-1) that the susceptibility composite is built from,
+    plus the reference grid's transform/CRS/bounds. Factored out of main()
+    so data/scripts/sensitivity_analysis.py can recombine the same real
+    factors under different weights without recomputing them from scratch."""
     with rasterio.open(DEM_DIR / "mumbai_dem_filled.tif") as src:
         elevation = src.read(1)
         ref_transform, ref_crs, ref_shape = src.transform, src.crs, (src.height, src.width)
@@ -65,7 +70,6 @@ def main():
     with rasterio.open(DEM_DIR / "mumbai_flow_accumulation.tif") as src:
         flow_accum = src.read(1).astype("float64")
 
-    # Resample the built-up mask (different source grid/resolution) onto the DEM grid.
     built_up_path = DATA_ROOT / "processed" / "landcover" / "mumbai_built_up_mask.tif"
     built_up = np.zeros(ref_shape, dtype="float32")
     with rasterio.open(built_up_path) as src:
@@ -73,12 +77,9 @@ def main():
             source=rasterio.band(src, 1), destination=built_up,
             src_transform=src.transform, src_crs=src.crs,
             dst_transform=ref_transform, dst_crs=ref_crs,
-            resampling=Resampling.average,  # average -> fraction built-up per DEM cell, not just nearest
+            resampling=Resampling.average,
         )
-    log.info(f"Resampled built-up mask onto DEM grid: {built_up.shape}, "
-             f"fraction built-up = {float(np.nanmean(built_up)):.3f}")
 
-    # Rasterize real OSM waterways onto the DEM grid, then distance-transform.
     import json
     with open(DATA_ROOT / "raw" / "water" / "greater_mumbai_water_waterways.geojson", encoding="utf-8") as f:
         water_geo = json.load(f)
@@ -86,17 +87,39 @@ def main():
     water_mask = rasterize(shapes, out_shape=ref_shape, transform=ref_transform, fill=0, dtype="uint8")
     px_size_m = abs(ref_transform.a) * 111_320
     dist_to_water_m = distance_transform_edt(1 - water_mask) * px_size_m
-    log.info(f"Water mask: {int(water_mask.sum())} cells on a waterway; "
-             f"max distance-to-water = {float(dist_to_water_m.max()):.0f}m")
 
-    elevation_score = normalize(-elevation)
-    slope_score = normalize(-slope)
-    flow_score = normalize(np.log1p(flow_accum))
-    built_up_score = np.clip(built_up, 0, 1)
-    water_proximity_score = normalize(-np.clip(dist_to_water_m, 0, 1000))  # cap at 1km — beyond that, no added susceptibility
+    factors = {
+        "elevation": normalize(-elevation),
+        "slope": normalize(-slope),
+        "flow_accumulation": normalize(np.log1p(flow_accum)),
+        "built_up": np.clip(built_up, 0, 1),
+        "water_proximity": normalize(-np.clip(dist_to_water_m, 0, 1000)),
+    }
+    validate_factors(factors, ref_shape)
+    return factors, ref_transform, ref_crs, ref_bounds
 
-    susceptibility = (elevation_score + slope_score + flow_score + built_up_score + water_proximity_score) / 5.0
+
+def validate_factors(factors: dict, expected_shape: tuple):
+    """Disaster-readiness audit item 1.3 (DEM/raster errors): a corrupt or
+    truncated input raster must fail loudly here, never propagate silently
+    into a susceptibility map that looks plausible but is wrong. Raises
+    AssertionError with a specific reason on any violation — this is meant
+    to crash the pipeline run, not to be caught and worked around."""
+    for name, arr in factors.items():
+        assert arr.shape == expected_shape, f"Factor '{name}' shape {arr.shape} != expected {expected_shape}"
+        assert np.isfinite(arr).all(), f"Factor '{name}' contains NaN/Inf values ({(~np.isfinite(arr)).sum()} cells)"
+        lo, hi = float(arr.min()), float(arr.max())
+        assert -1e-6 <= lo and hi <= 1 + 1e-6, f"Factor '{name}' out of expected [0,1] range: [{lo}, {hi}]"
+        assert hi - lo > 1e-6, f"Factor '{name}' is constant (min==max=={lo}) — likely a data/reprojection failure"
+
+
+def main():
+    factors, ref_transform, ref_crs, ref_bounds = load_factor_scores()
+    log.info(f"Fraction built-up = {float(np.nanmean(factors['built_up'])):.3f}")
+
+    susceptibility = sum(factors.values()) / len(factors)
     susceptibility = susceptibility.astype("float32")
+    ref_shape = susceptibility.shape
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     meta = {"driver": "GTiff", "dtype": "float32", "count": 1, "height": ref_shape[0], "width": ref_shape[1],

@@ -56,6 +56,8 @@ export interface SummaryReportData {
   zoneName: string;
   generatedAt: string;
   realRainfallMmHr: number;
+  effectiveRainfallMmHr: number;
+  scenarioActive: boolean;
   zoneSeverity: { score: number; label: string };
   roadImpact: { count: number; highRiskCount: number; meanAdjustedRisk: number };
   infraExposure: { count: number; highRiskCount: number; weightedMeanAdjustedRisk: number };
@@ -100,6 +102,7 @@ export function openPrintSummaryReport(data: SummaryReportData) {
     <h2>Current Conditions</h2>
     <table>
       <tr><td class="label">Real rainfall intensity <span class="badge">OBSERVED</span></td><td class="value">${data.realRainfallMmHr.toFixed(1)} mm/h</td></tr>
+      ${data.scenarioActive ? `<tr><td class="label">Scenario rainfall driving this report <span class="badge">SIMULATED</span></td><td class="value">${data.effectiveRainfallMmHr.toFixed(1)} mm/h</td></tr>` : ''}
       <tr><td class="label">Zone flood severity <span class="badge">MODELLED</span></td><td class="value">${data.zoneSeverity.label} (${data.zoneSeverity.score.toFixed(2)})</td></tr>
       <tr><td class="label">Affected area <span class="badge">SIMULATED</span></td><td class="value">${data.affectedAreaKm2.toFixed(2)} km&sup2;</td></tr>
     </table>

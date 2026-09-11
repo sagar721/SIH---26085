@@ -1,39 +1,57 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
+/* FLOODWATCH V3 — "Institutional Light" design tokens (see
+   FLOODWATCH_V3_DESIGN_SPEC.md §8). Replaces the previous dark
+   cyan-on-charcoal theme with a warm, high-legibility instrument panel
+   look, deliberately distinct from a GIS/hacker aesthetic. Single-theme
+   by design (the aesthetic itself — a light institutional command
+   console — is the point, not a togglable preference), so every color is
+   declared once here rather than split across light/dark media blocks. */
 @layer base {
   :root {
-    --background: 220 14% 4%; /* Dark gray/blue for professional dashboard */
-    --foreground: 210 40% 98%;
-    
-    --card: 220 14% 10%;
-    --card-foreground: 210 40% 98%;
-    
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    
-    --border: 217 14% 20%;
-    
-    /* Semantic Colors */
-    --cyan: 190 90% 50%;
-    --red: 0 84% 60%;
-    --amber: 38 92% 50%;
-    --green: 142 71% 45%;
-    --gray: 220 14% 30%;
+    --background: 42 32% 91%;       /* warm parchment */
+    --foreground: 222 22% 16%;      /* near-navy ink */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 22% 16%;
+
+    --primary: 222 34% 20%;         /* navy — brand + primary actions */
+    --primary-foreground: 0 0% 100%;
+
+    --muted: 42 22% 87%;            /* warm surface tint — chips, inputs, dock */
+    --muted-foreground: 220 12% 40%;
+
+    --border: 42 26% 82%;
+
+    /* Semantic status colors — deliberately separate from --primary so
+       "this means something happened" is never confused with "this is
+       clickable". Tuned for AA-ish contrast as text on white/parchment,
+       not just as light-on-dark accents. */
+    --cyan: 202 42% 32%;   /* observed / interactive accent (was neon cyan) */
+    --red: 6 58% 42%;      /* critical / blocked */
+    --amber: 32 55% 42%;   /* warning / moderate */
+    --green: 152 34% 32%;  /* safe / low-risk / observed-positive */
+    --gray: 220 10% 45%;
   }
 }
 
 body {
   @apply bg-background text-foreground;
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
   margin: 0;
   overflow: hidden; /* App-like layout */
 }
 
-/* MapLibre specific overrides for dark mode */
+/* MapLibre specific overrides for the light basemap */
 .maplibregl-ctrl-bottom-right,
 .maplibregl-ctrl-bottom-left {
   z-index: 10 !important;
+}
+.maplibregl-popup-content {
+  font-family: 'IBM Plex Sans', sans-serif;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 28px rgba(16,24,38,.16) !important;
 }
 
 /* Custom scrollbar for data panels */
@@ -43,14 +61,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent; 
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--border)); 
+  background: hsl(var(--border));
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5); 
+  background: hsl(var(--primary) / 0.35);
 }

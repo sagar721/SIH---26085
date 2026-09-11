@@ -5,9 +5,12 @@ GeoJSON/PNG/JSON assets small enough for a client fetch() are copied here.
 
 This script is idempotent and safe to re-run after any re-acquisition.
 """
+import json
 import shutil
 import sys
 from pathlib import Path
+
+from shapely.geometry import shape, mapping
 
 sys.path.insert(0, str(Path(__file__).parent))
 from common import DATA_ROOT, get_logger, now_iso, write_json
@@ -16,11 +19,59 @@ log = get_logger("prepare_frontend_data")
 
 FRONTEND_DATA = DATA_ROOT.parent / "frontend" / "public" / "data"
 
+# Perf investigation finding: entering a pilot zone JSON.parses several MB of
+# GeoJSON synchronously on the main thread, a measured contributor to an
+# 8-10s near-100%-CPU window on zone entry. Geometry simplification (Douglas-
+# Peucker via shapely, preserve_topology=True) cuts vertex count — and so
+# both transfer size and parse cost — on the largest, densest layers, at a
+# tolerance small enough (~5m) to be visually imperceptible at the zoom
+# levels these layers are actually viewed at. Only applied to the SERVED
+# copy; data/raw/ stays untouched for provenance/reproducibility.
+SIMPLIFY_TOLERANCE_DEG = 0.00005  # ~5.5m at Mumbai's latitude
+SIMPLIFY_PATTERNS = {
+    "roads_risk.geojson", "buildings.geojson", "water_waterways.geojson",
+    "major_roads.geojson", "admin_boundary.geojson",
+}
+
+
+def copy_or_simplify(src: Path, dest: Path):
+    if not any(src.name.endswith(p) for p in SIMPLIFY_PATTERNS):
+        shutil.copy2(src, dest)
+        return src.stat().st_size, dest.stat().st_size
+
+    with open(src, encoding="utf-8") as f:
+        fc = json.load(f)
+    before_vertices = 0
+    after_vertices = 0
+    for feat in fc.get("features", []):
+        geom = feat.get("geometry")
+        if not geom or geom["type"] not in ("LineString", "Polygon", "MultiLineString", "MultiPolygon"):
+            continue
+        shp = shape(geom)
+        before_vertices += _count_coords(geom["coordinates"])
+        simplified = shp.simplify(SIMPLIFY_TOLERANCE_DEG, preserve_topology=True)
+        if simplified.is_empty or not simplified.is_valid:
+            continue  # keep original geometry for this feature rather than risk a broken shape
+        feat["geometry"] = mapping(simplified)
+        after_vertices += _count_coords(feat["geometry"]["coordinates"])
+    with open(dest, "w", encoding="utf-8") as f:
+        json.dump(fc, f, ensure_ascii=False)
+    log.info(f"Simplified {src.name}: {before_vertices} -> {after_vertices} vertices "
+              f"({100 * (1 - after_vertices / max(before_vertices, 1)):.0f}% reduction)")
+    return src.stat().st_size, dest.stat().st_size
+
+
+def _count_coords(c):
+    if not c:
+        return 0
+    if isinstance(c[0], (int, float)):
+        return 1
+    return sum(_count_coords(x) for x in c)
+
+
 COPY_MAP = [
     (DATA_ROOT / "raw" / "roads" / "greater_mumbai_admin_boundary.geojson", "boundary/greater_mumbai_admin_boundary.geojson"),
     (DATA_ROOT / "raw" / "roads" / "greater_mumbai_major_roads.geojson", "roads/greater_mumbai_major_roads.geojson"),
-    (DATA_ROOT / "raw" / "roads" / "kurla_sion_roads.geojson", "roads/kurla_sion_roads.geojson"),
-    (DATA_ROOT / "raw" / "roads" / "hindmata_dadar_roads.geojson", "roads/hindmata_dadar_roads.geojson"),
     (DATA_ROOT / "raw" / "buildings" / "kurla_sion_buildings.geojson", "buildings/kurla_sion_buildings.geojson"),
     (DATA_ROOT / "raw" / "buildings" / "hindmata_dadar_buildings.geojson", "buildings/hindmata_dadar_buildings.geojson"),
     (DATA_ROOT / "raw" / "water" / "greater_mumbai_water_waterways.geojson", "water/greater_mumbai_water_waterways.geojson"),
@@ -52,10 +103,12 @@ COPY_MAP = [
     (DATA_ROOT / "processed" / "dem" / "mumbai_elevation_query_grid.geojson", "dem/mumbai_elevation_query_grid.geojson"),
     (DATA_ROOT / "processed" / "dem" / "mumbai_slope_query_grid.geojson", "dem/mumbai_slope_query_grid.geojson"),
     (DATA_ROOT / "processed" / "flood_model" / "mumbai_susceptibility_query_grid.geojson", "flood_model/mumbai_susceptibility_query_grid.geojson"),
+    (DATA_ROOT / "processed" / "flood_model" / "sensitivity_analysis.json", "flood_model/sensitivity_analysis.json"),
     (DATA_ROOT / "raw" / "validation" / "_IFI_ACQUISITION_STATUS.json", "validation/ifi_status.json"),
     (DATA_ROOT / "raw" / "validation" / "_SENTINEL1_STATUS.json", "validation/sentinel1_status.json"),
     (DATA_ROOT / "raw" / "validation" / "mumbai_ifi_events.json", "validation/mumbai_ifi_events.json"),
     (DATA_ROOT / "processed" / "validation" / "kurla_sion_sentinel1_validation_status.json", "validation/kurla_sion_sentinel1_scenes.json"),
+    (DATA_ROOT / "processed" / "validation" / "sentinel1_water_detection_validation.json", "validation/sentinel1_water_detection_validation.json"),
     (DATA_ROOT / "raw" / "dem" / "_ACQUISITION_STATUS.json", "dem/dem_status.json"),
     (DATA_ROOT / "data_manifest.json", "data_manifest.json"),
 ]
@@ -64,13 +117,16 @@ COPY_MAP = [
 def main():
     copied = []
     missing = []
+    total_before = total_after = 0
     for src, rel_dest in COPY_MAP:
         dest = FRONTEND_DATA / rel_dest
         if not src.exists():
             missing.append(str(src))
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
+        before, after = copy_or_simplify(src, dest)
+        total_before += before
+        total_after += after
         copied.append(rel_dest)
         log.info(f"Copied {src.name} -> {dest}")
 
@@ -81,8 +137,11 @@ def main():
         "copied_at": now_iso(),
         "files": copied,
         "missing_sources": missing,
+        "total_bytes_before_simplification": total_before,
+        "total_bytes_after_simplification": total_after,
     }, log)
-    log.info(f"Done. {len(copied)} files copied, {len(missing)} sources missing.")
+    log.info(f"Done. {len(copied)} files copied, {len(missing)} sources missing. "
+              f"Total size: {total_before/1024:.0f}KB -> {total_after/1024:.0f}KB")
 
 
 if __name__ == "__main__":
