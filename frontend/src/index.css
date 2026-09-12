@@ -1,0 +1,74 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* FLOODWATCH V3 — "Institutional Light" design tokens (see
+   FLOODWATCH_V3_DESIGN_SPEC.md §8). Replaces the previous dark
+   cyan-on-charcoal theme with a warm, high-legibility instrument panel
+   look, deliberately distinct from a GIS/hacker aesthetic. Single-theme
+   by design (the aesthetic itself — a light institutional command
+   console — is the point, not a togglable preference), so every color is
+   declared once here rather than split across light/dark media blocks. */
+@layer base {
+  :root {
+    --background: 42 32% 91%;       /* warm parchment */
+    --foreground: 222 22% 16%;      /* near-navy ink */
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 22% 16%;
+
+    --primary: 222 34% 20%;         /* navy — brand + primary actions */
+    --primary-foreground: 0 0% 100%;
+
+    --muted: 42 22% 87%;            /* warm surface tint — chips, inputs, dock */
+    --muted-foreground: 220 12% 40%;
+
+    --border: 42 26% 82%;
+
+    /* Semantic status colors — deliberately separate from --primary so
+       "this means something happened" is never confused with "this is
+       clickable". Tuned for AA-ish contrast as text on white/parchment,
+       not just as light-on-dark accents. */
+    --cyan: 202 42% 32%;   /* observed / interactive accent (was neon cyan) */
+    --red: 6 58% 42%;      /* critical / blocked */
+    --amber: 32 55% 42%;   /* warning / moderate */
+    --green: 152 34% 32%;  /* safe / low-risk / observed-positive */
+    --gray: 220 10% 45%;
+  }
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-family: 'IBM Plex Sans', -apple-system, 'Segoe UI', sans-serif;
+  margin: 0;
+  overflow: hidden; /* App-like layout */
+}
+
+/* MapLibre specific overrides for the light basemap */
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  z-index: 10 !important;
+}
+.maplibregl-popup-content {
+  font-family: 'IBM Plex Sans', sans-serif;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 28px rgba(16,24,38,.16) !important;
+}
+
+/* Custom scrollbar for data panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.35);
+}

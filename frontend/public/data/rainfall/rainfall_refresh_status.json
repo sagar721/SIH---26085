@@ -1,0 +1,9 @@
+{
+  "last_updated_utc": "2026-09-11T06:15:33.285901+00:00",
+  "source": "JAXA GSMaP V8 Gauge-calibrated hourly rainfall (realtime_ver, FTP)",
+  "latest_data_timestamp_utc": "2026-09-06T23:00:00+00:00",
+  "data_age_hours": 103.26,
+  "status": "warning",
+  "message": "JAXA_FTP_USER / JAXA_FTP_PASSWORD not set - cannot check for new data. Keeping last valid dataset.",
+  "new_files_downloaded": 0
+}

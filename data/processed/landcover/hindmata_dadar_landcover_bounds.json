@@ -1,0 +1,1 @@
+{"zone_id": "hindmata_dadar", "bounds_wgs84": {"west": 72.8226, "south": 18.9963, "east": 72.8626, "north": 19.0363}, "image": "hindmata_dadar_landcover.png", "source": "ESA WorldCover 10m v200 (2021)", "class_pixel_counts": {"10": 47777, "30": 2395, "40": 2514, "50": 138964, "60": 4576, "80": 33469, "95": 705}, "generated_at": "2026-09-08T06:49:48.014148+00:00"}

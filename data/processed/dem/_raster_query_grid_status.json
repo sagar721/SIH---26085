@@ -1,0 +1,1 @@
+{"status": "COMPLETE", "grid_size": 50, "approx_point_spacing_deg": 0.009, "method": "Fixed-size grid sample of real GeoTIFF pixel values (nearest-neighbor lookup at click time)", "generated_at": "2026-09-08T12:10:49.070300+00:00"}

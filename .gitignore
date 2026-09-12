@@ -1,0 +1,55 @@
+# Secrets — NEVER commit real credentials
+.env
+.env.local
+*.pem
+*.key
+
+# Node / frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Python
+__pycache__/
+*.pyc
+data/scripts/_tmp/
+.venv_flood/
+
+# Real downloaded Sentinel-1 GRD scenes (~1GB each) — regenerable via
+# data/scripts/sentinel1_process_scene.py / sentinel1_validation.py against
+# real CDSE credentials; never committed. The derived validation JSON
+# result (small, real numbers) IS tracked.
+data/raw/validation/sentinel1_scenes/
+
+# Large regenerable source/intermediate rasters and binaries — each is
+# reproducible via its data/scripts/download_*.py or process_*.py script
+# from a real credentialed source; not tracked to keep the repo clonable.
+# The small PNG/JSON/GeoJSON outputs derived from these (already copied
+# into frontend/public/data/ for the running demo) ARE tracked.
+data/raw/landcover/*.tif
+data/raw/dem/*.tif
+data/raw/rainfall/gsmap/
+data/raw/rainfall/imd-rmc-mumbai/
+data/raw/rainfall/Mumbai - Radar_files/
+data/processed/landcover/*.tif
+data/processed/dem/*.tif
+data/processed/flood_model/*.tif
+
+# Third-party reference project (god's-eye-view) — read-only reference
+# material only, never merged into or shipped as part of FLOODWATCH; not
+# part of the app and not tracked in this repository.
+gods-eye-view-main/
+
+# Local Python venv used for the data pipeline (see requirements.txt to recreate)
+.venv_flood/
+
+# Claude Code local runtime state (not project source)
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Stray local file, not part of the FLOODWATCH project (not in the
+# upstream repo, generic export filename suggests incidental local clutter)
+Text_to_PDF_Onlinenotpad (1).pdf
