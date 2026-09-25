@@ -1,6 +1,6 @@
 // Deterministic Situation Brief / Recommended Action generator.
 //
-// Per FLOODWATCH_V3_DESIGN_SPEC.md §6.1: every sentence here is assembled
+// Per FLOODCAST_V3_DESIGN_SPEC.md §6.1: every sentence here is assembled
 // from real, already-computed fields — never a free-generation model call.
 // That's a deliberate constraint, not a shortcut: a template can be proven
 // correct against its inputs, a free-text summary can't, and this project
@@ -13,7 +13,7 @@ import { type CapacityMargin } from './riskModel';
 
 export type Confidence = 'Low' | 'Medium';
 // 'High' is deliberately not a reachable value anywhere in this module —
-// nothing in FLOODWATCH has been validated against an observed flood (see
+// nothing in FLOODCAST has been validated against an observed flood (see
 // ValidationModal), so claiming high confidence would misrepresent that.
 
 export interface SituationInput {

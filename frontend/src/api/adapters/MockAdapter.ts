@@ -113,38 +113,10 @@ export class MockAdapter implements FloodDataAdapter {
     return excess * 1.2;
   }
 
-  async getInfrastructureData(zoneId: string, time: TimePoint, scenarioMultiplier = 1.0, drainageBlockage = 0): Promise<FeatureCollection> {
-    const zone = PILOT_ZONES[zoneId];
-    const [lng, lat] = zone.center;
-    
-    // Create a few mock hospitals/schools
-    const types = ['Hospital', 'School', 'Emergency Station'];
-    const features: Feature[] = [];
-    
-    const row = await rainfallService.getRowForTime(time.timestamp);
-    let baseDepth = row ? ((zoneId === 'kurla_sion' ? row.kurla_sion_accum_3h : row.hindmata_dadar_accum_3h) * scenarioMultiplier) / 100.0 : 0;
-    baseDepth *= (1 + (drainageBlockage / 100.0));
-
-    for (let i = 0; i < 4; i++) {
-      const offsetX = (i % 2 === 0 ? 0.008 : -0.008) * (i + 1) * 0.5;
-      const offsetY = (i < 2 ? 0.008 : -0.008);
-      // Rough depth intersection mock
-      const depth = Math.max(0, baseDepth - (Math.abs(offsetX) * 10));
-
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [lng + offsetX, lat + offsetY] },
-        properties: {
-          name: `Zone ${types[i % types.length]} ${i+1}`,
-          type: types[i % types.length],
-          depthMeters: depth.toFixed(2),
-          status: depth > 0.5 ? 'CRITICAL' : depth > 0.1 ? 'AT RISK' : 'SAFE',
-          provenance: 'SIMULATED'
-        }
-      });
-    }
-
-    return { type: 'FeatureCollection', features };
+  async getInfrastructureData(): Promise<FeatureCollection> {
+    // Infrastructure geometry is real (BMC/OSM) — see RealDataAdapter.getInfrastructureData.
+    // This adapter never generates fabricated hospitals/schools.
+    return { type: 'FeatureCollection', features: [] };
   }
 
   async getZoneRiskSummary(zoneId: string, time: TimePoint, scenarioMultiplier = 1.0, drainageBlockage = 0): Promise<FloodRiskSummary> {

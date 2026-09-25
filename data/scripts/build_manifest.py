@@ -359,7 +359,7 @@ def main():
         write_json(meta_dir / f"{i:02d}_{slug}.json", e, log)
 
     write_json(DATA_ROOT / "data_manifest.json", {
-        "project": "SIH26085 - FLOODWATCH Urban Flood Nowcasting System",
+        "project": "SIH26085 - FLOODCAST Urban Flood Nowcasting System",
         "city": "Mumbai, Maharashtra, India",
         "generated_at": now_iso(),
         "source_of_truth": "Mumbai_SIH26085_Verified_Data_Sources_2.xlsx",

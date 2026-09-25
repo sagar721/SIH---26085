@@ -48,7 +48,7 @@ const SafePlacesList: React.FC<{ places: SafePlace[]; columns?: 1 | 2 }> = ({ pl
 
 export const CitizenView: React.FC = () => {
   const { activeZone } = useZoneStore();
-  const { riskSummary, infraFeatures } = useFloodData();
+  const { riskSummary, infraFeatures, roadsFeatures } = useFloodData();
   const { zoneSeverity, roadImpact, infraExposure, realRainfallMmHr, effectiveRainfallMmHr, scenarioActive } = useRainfallAwareRisk();
   const { drainageBlockage } = useSimulationStore();
   const [tile, setTile] = useState<Tile>(null);
@@ -58,7 +58,9 @@ export const CitizenView: React.FC = () => {
   // hidden mobile copy sitting in the DOM simultaneously.
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
-  const affectedRoadNames: string[] = [];
+  const affectedRoadNames = [...new Set(
+    (roadsFeatures?.features ?? []).filter((f) => f.properties?.affected).map((f) => f.properties?.name).filter(Boolean)
+  )] as string[];
   const affectedAssetNames = (infraFeatures?.features ?? [])
     .filter((f) => f.properties?.status !== 'SAFE')
     .map((f) => f.properties?.name)
@@ -177,7 +179,7 @@ export const CitizenView: React.FC = () => {
     <div className="flex items-center gap-2.5 px-5 py-4 border-b border-border lg:border-b-0 lg:px-0 lg:mb-5">
       <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center"><CloudRain className="w-4 h-4 text-primary-foreground" /></div>
       <div>
-        <div className="text-[13px] font-bold text-foreground leading-tight">FLOODWATCH · Citizen</div>
+        <div className="text-[13px] font-bold text-foreground leading-tight">FLOODCAST · Citizen</div>
         <div className="text-[9px] text-muted-foreground uppercase tracking-wider">{activeZone.name.split('–')[0]}</div>
       </div>
     </div>

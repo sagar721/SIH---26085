@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* FLOODWATCH V3 — "Institutional Light" design tokens (see
-   FLOODWATCH_V3_DESIGN_SPEC.md §8). Replaces the previous dark
+/* FLOODCAST V3 — "Institutional Light" design tokens (see
+   FLOODCAST_V3_DESIGN_SPEC.md §8). Replaces the previous dark
    cyan-on-charcoal theme with a warm, high-legibility instrument panel
    look, deliberately distinct from a GIS/hacker aesthetic. Single-theme
    by design (the aesthetic itself — a light institutional command

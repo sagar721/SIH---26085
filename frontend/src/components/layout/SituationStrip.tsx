@@ -35,7 +35,7 @@ const OverviewSituationStrip: React.FC = () => {
 
 // The serif "what's happening right now" headline — the single most-read
 // line on the whole screen. Every number in it traces back to a real
-// computed field; see FLOODWATCH_V3_DESIGN_SPEC.md §4.1-4.2 for why the
+// computed field; see FLOODCAST_V3_DESIGN_SPEC.md §4.1-4.2 for why the
 // "exceeds capacity in ~N min" phrasing only appears when a genuine rising
 // trend actually supports it, and falls back to an honest capacity-margin
 // statement otherwise.

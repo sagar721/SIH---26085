@@ -19,7 +19,7 @@ export interface ZoneOverviewRow {
 // same adapters every per-zone screen already uses, once per pilot zone,
 // rather than (as the pre-V3 layout implicitly did) silently showing one
 // zone's numbers under a "Greater Mumbai" label. Today this only covers
-// the 2 pilot zones with real data; see FLOODWATCH_V3_DESIGN_SPEC.md §3 —
+// the 2 pilot zones with real data; see FLOODCAST_V3_DESIGN_SPEC.md §3 —
 // extending this to the rest of Greater Mumbai needs real citywide data,
 // not a UI change.
 export function useMumbaiOverviewSummary() {

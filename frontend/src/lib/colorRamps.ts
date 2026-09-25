@@ -152,3 +152,23 @@ export const DRAINAGE_STATUS_COLOR: Record<DrainageNodeStatus, string> = {
   approaching_capacity: '#C9A227',
   surcharge: '#B4392C',
 };
+
+// --- Critical infrastructure status (the map's "green dots") ---
+// SAFE/AT RISK/CRITICAL are assigned in useFloodData.ts's
+// enrichInfraWithSimulatedDepth from simulated flood depth at that point
+// (>0.5m -> CRITICAL, >0.1m -> AT RISK, else SAFE). Exported here so the
+// map layer paint expression (MapContainer.tsx) and the visible legend
+// (MapLegend.tsx) can never disagree about what each color means.
+export type InfraStatus = 'SAFE' | 'AT RISK' | 'CRITICAL';
+
+export const INFRA_STATUS_COLOR: Record<InfraStatus, string> = {
+  SAFE: '#3D7A5C',
+  'AT RISK': '#B9762E',
+  CRITICAL: '#B4392C',
+};
+
+export const INFRA_STATUS_LABELS: Array<{ key: InfraStatus; label: string; detail: string }> = [
+  { key: 'SAFE', label: 'Safe', detail: 'simulated depth ≤ 0.1m' },
+  { key: 'AT RISK', label: 'At risk', detail: '0.1m – 0.5m simulated depth' },
+  { key: 'CRITICAL', label: 'Critical', detail: '> 0.5m simulated depth' },
+];

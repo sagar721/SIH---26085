@@ -57,7 +57,7 @@ export const DataProvenanceModal: React.FC<DataProvenanceModalProps> = ({ isOpen
           <div className="text-xs space-y-1">
             <p className="font-semibold text-cyan">SIH26085 Scientific Integrity & Provenance Compliance</p>
             <p className="text-muted-foreground leading-relaxed">
-              Every spatial and temporal layer in FLOODWATCH is tagged with its authoritative data provider and operational status.
+              Every spatial and temporal layer in FLOODCAST is tagged with its authoritative data provider and operational status.
               Synthetic and hydrologically inferred layers are explicitly demarcated with <span className="font-mono text-amber-700 bg-amber-400/10 px-1 py-0.5 rounded border border-amber-400/20">[INFERRED]</span> / <span className="font-mono text-purple-700 bg-purple-400/10 px-1 py-0.5 rounded border border-purple-400/20">[SYNTHETIC]</span> badges and are never misrepresented as official municipal records.
             </p>
           </div>

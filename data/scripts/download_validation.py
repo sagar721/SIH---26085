@@ -1,4 +1,4 @@
-"""Downloads REAL historical-flood validation data for FLOODWATCH.
+"""Downloads REAL historical-flood validation data for FLOODCAST.
 
 1. India Flood Inventory (IFI) v2 — Excel category G, RECOMMENDATION=PRIMARY
    (event index) / VALIDATION ONLY (extent). Zenodo record 11275211, no

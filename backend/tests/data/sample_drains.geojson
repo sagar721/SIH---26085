@@ -1,0 +1,44 @@
+{
+  "type": "FeatureCollection",
+  "name": "bmc_storm_water_drains_sample",
+  "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "OBJECTID": 101,
+        "DRAIN_ID": "DR_MITHI_01",
+        "WIDTH_M": 3.5,
+        "DEPTH_M": 2.0,
+        "CORRIDOR": "Mithi_Kurla",
+        "STATUS": "CLEANED"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [72.8750, 19.0650],
+          [72.8760, 19.0660],
+          [72.8780, 19.0680]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "OBJECTID": 102,
+        "DRAIN_ID": "DR_MITHI_02",
+        "WIDTH_M": 2.5,
+        "DEPTH_M": 1.5,
+        "CORRIDOR": "Saki_Naka",
+        "STATUS": "ACTIVE"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [72.8800, 19.0700],
+          [72.8820, 19.0720]
+        ]
+      }
+    }
+  ]
+}

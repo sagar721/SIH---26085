@@ -1,0 +1,20 @@
+{
+  "name": "Mithi River - Kurla - Kalina - BKC Corridor",
+  "zone_id": "MUMBAI_MITHI_CORRIDOR_01",
+  "city": "Mumbai",
+  "state": "Maharashtra",
+  "country": "India",
+  "crs": "EPSG:4326",
+  "projected_crs": "EPSG:32643",
+  "bbox": {
+    "min_lon": 72.8500,
+    "min_lat": 19.0550,
+    "max_lon": 72.8950,
+    "max_lat": 19.1150
+  },
+  "center": {
+    "lon": 72.8725,
+    "lat": 19.0850
+  },
+  "description": "Demonstration corridor along Mithi River, Kurla, Kalina, Saki Naka, and Bandra Kurla Complex (BKC)."
+}

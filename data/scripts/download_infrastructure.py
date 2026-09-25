@@ -1,4 +1,4 @@
-"""Downloads REAL critical-infrastructure data for FLOODWATCH.
+"""Downloads REAL critical-infrastructure data for FLOODCAST.
 
 Primary source (per Excel category I, RECOMMENDATION=PRIMARY): official MCGM
 ArcGIS FeatureServer layers, confirmed publicly queryable at

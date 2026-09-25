@@ -1,4 +1,4 @@
-"""Shared helpers for FLOODWATCH data-acquisition scripts.
+"""Shared helpers for FLOODCAST data-acquisition scripts.
 
 Every download script in this directory uses these helpers so that
 logging, validation, and metadata generation are consistent across
@@ -30,7 +30,7 @@ OVERPASS_ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter",
 ]
-USER_AGENT = "SIH26085-FloodWatch/1.0 (research prototype; contact: SIH team)"
+USER_AGENT = "SIH26085-FloodCast/1.0 (research prototype; contact: SIH team)"
 
 # The two pilot zones this project simulates in detail (Kurla-Sion-Chunabhatti,
 # Hindmata-Dadar-Parel), as (west, south, east, north) WGS84 bboxes. Matches the

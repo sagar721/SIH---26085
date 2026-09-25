@@ -96,7 +96,7 @@ export const ValidationModal: React.FC<ValidationModalProps> = ({ isOpen, onClos
           <div className="text-xs space-y-1">
             <p className="font-semibold text-amber-700">No hydraulic model has been calibrated or validated yet</p>
             <p className="text-muted-foreground leading-relaxed">
-              FLOODWATCH's current flood depth/extent is a transparent deterministic proxy (rainfall × scenario multiplier ×
+              FLOODCAST's current flood depth/extent is a transparent deterministic proxy (rainfall × scenario multiplier ×
               drainage-blockage factor) — see the Data Provenance panel. It has not been compared against any real observed
               flood extent. The scorecards below show real, reproducible metrics only once such a comparison has actually
               been executed. No accuracy numbers are fabricated in their absence.

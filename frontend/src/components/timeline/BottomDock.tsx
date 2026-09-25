@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, Radio } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useZoneStore } from '../../stores/useZoneStore';
@@ -12,12 +12,13 @@ import { computeZoneFloodSeverity, getEffectiveRainfallMmHr } from '../../lib/ri
 // summary of the active scenario, a real zone-severity sparkline, and the
 // existing scrubber/playback controls. The sliders themselves moved to the
 // Simulation Decision-Flow tab (SimulationPanel.tsx) — see
-// FLOODWATCH_V3_DESIGN_SPEC.md §4.6.
+// FLOODCAST_V3_DESIGN_SPEC.md §4.6.
 export const BottomDock: React.FC = () => {
   const {
-    timeIndex, availableTimestamps, setTimeIndex, isPlaying, togglePlayback,
+    mode, timeIndex, availableTimestamps, setTimeIndex, isPlaying, togglePlayback,
     playbackSpeed, setPlaybackSpeed, scenarioMultiplier, drainageBlockage, resetTimeline,
   } = useSimulationStore();
+  const isLive = mode === 'live';
   const { activeZone } = useZoneStore();
   const { roadsRisk, infraRisk } = useRainfallAwareRisk();
 
@@ -65,9 +66,16 @@ export const BottomDock: React.FC = () => {
   return (
     <div className="border-t border-border bg-card px-6 py-3.5 flex items-center gap-6 flex-wrap">
       <div className="min-w-[210px]">
-        <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-1">Active Scenario</div>
+        <div className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground mb-1 flex items-center gap-1.5">
+          Active Scenario
+          {!isLive && (
+            <span className="px-1.5 py-0.5 rounded bg-amber/15 text-amber text-[9px] font-bold tracking-wide normal-case">
+              Scenario Simulation (Hypothetical)
+            </span>
+          )}
+        </div>
         <div className="text-[13px] font-semibold text-foreground">
-          {scenarioActive ? `${scenarioMultiplier.toFixed(1)}x design-storm rainfall` : 'Real observed rainfall'}
+          {isLive ? 'Live — real observed rainfall' : scenarioActive ? `${scenarioMultiplier.toFixed(1)}x design-storm rainfall` : 'Real observed rainfall'}
         </div>
         <div className="text-[11px] text-muted-foreground mt-0.5">
           Drainage blockage {drainageBlockage}% · {format(parsedTime, 'HH:mm, MMM dd')}
@@ -87,11 +95,13 @@ export const BottomDock: React.FC = () => {
         </div>
         <div className="relative h-2 bg-muted rounded-full">
           <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${(timeIndex / Math.max(1, availableTimestamps.length - 1)) * 100}%` }} />
-          <input
-            type="range" min="0" max={availableTimestamps.length - 1} value={timeIndex}
-            onChange={(e) => setTimeIndex(parseInt(e.target.value))}
-            className="absolute inset-0 w-full opacity-0 cursor-pointer"
-          />
+          {!isLive && (
+            <input
+              type="range" min="0" max={availableTimestamps.length - 1} value={timeIndex}
+              onChange={(e) => setTimeIndex(parseInt(e.target.value))}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer"
+            />
+          )}
         </div>
         <div className="flex justify-between text-[10px] font-mono text-muted-foreground mt-1.5">
           <span>T+0 &middot; {format(parseISO(availableTimestamps[0]), 'HH:mm')}</span>
@@ -102,34 +112,41 @@ export const BottomDock: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 shrink-0">
-        <button
-          onClick={togglePlayback}
-          className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-        >
-          {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
-        </button>
-        <button
-          onClick={resetTimeline}
-          className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-muted/70 transition-colors shrink-0"
-          title="Reset to T+0"
-          aria-label="Reset to T+0"
-        >
-          <RotateCcw size={14} />
-        </button>
-        <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
-          {[1, 2, 5].map((speed) => (
-            <button
-              key={speed}
-              onClick={() => setPlaybackSpeed(speed)}
-              className={`px-2 py-1 rounded text-[11px] font-mono font-medium transition-colors ${playbackSpeed === speed ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-background'}`}
-            >
-              {speed}x
-            </button>
-          ))}
+      {isLive ? (
+        <div className="flex items-center gap-2 shrink-0 px-3.5 py-2 rounded-full bg-green/10 border border-green/25 text-green">
+          <Radio className="w-3.5 h-3.5 animate-pulse" />
+          <span className="text-xs font-bold uppercase tracking-wide">Live · Auto-updating</span>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={togglePlayback}
+            className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+            aria-label={isPlaying ? 'Pause' : 'Play'}
+          >
+            {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" className="ml-0.5" />}
+          </button>
+          <button
+            onClick={resetTimeline}
+            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-foreground hover:bg-muted/70 transition-colors shrink-0"
+            title="Reset to T+0"
+            aria-label="Reset to T+0"
+          >
+            <RotateCcw size={14} />
+          </button>
+          <div className="flex items-center gap-0.5 bg-muted p-0.5 rounded-lg">
+            {[1, 2, 5].map((speed) => (
+              <button
+                key={speed}
+                onClick={() => setPlaybackSpeed(speed)}
+                className={`px-2 py-1 rounded text-[11px] font-mono font-medium transition-colors ${playbackSpeed === speed ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-background'}`}
+              >
+                {speed}x
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,0 +1,1304 @@
+{
+  "source_url": "https://prsrvgisapp.mcgm.gov.in/server/rest/services/mcgm/MCGMGIS_Departments_Master_All_Layers/MapServer",
+  "retrieved_at": "2026-09-12T13:50:58.369119+00:00",
+  "total_layers_found": 121,
+  "matched_layers_count": 18,
+  "layers": [
+    {
+      "id": 3,
+      "name": "Manhole",
+      "parentLayerId": 5,
+      "minScale": 6001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPoint",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "LOCN",
+          "type": "esriFieldTypeString",
+          "alias": "Road Name"
+        },
+        {
+          "name": "ROAD_TYPE",
+          "type": "esriFieldTypeString",
+          "alias": "Road Type"
+        },
+        {
+          "name": "ZONE_NO",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Zone Number"
+        },
+        {
+          "name": "WARD_NO",
+          "type": "esriFieldTypeString",
+          "alias": "Ward Name"
+        },
+        {
+          "name": "EXCP_COND",
+          "type": "esriFieldTypeString",
+          "alias": "Exceptional Condition"
+        },
+        {
+          "name": "SUBTYPE",
+          "type": "esriFieldTypeInteger",
+          "alias": "Subtype"
+        },
+        {
+          "name": "TYPE",
+          "type": "esriFieldTypeString",
+          "alias": "Node Type"
+        },
+        {
+          "name": "STATUS",
+          "type": "esriFieldTypeString",
+          "alias": "STATUS"
+        },
+        {
+          "name": "SURVEY_DT",
+          "type": "esriFieldTypeDate",
+          "alias": "Survey Date"
+        },
+        {
+          "name": "MAN_SH",
+          "type": "esriFieldTypeString",
+          "alias": "Manhole Shape"
+        },
+        {
+          "name": "COV_SH",
+          "type": "esriFieldTypeString",
+          "alias": "Cover Shape"
+        },
+        {
+          "name": "COV_DIM1",
+          "type": "esriFieldTypeDouble",
+          "alias": "Cover Dim-X / Dia (mm)"
+        },
+        {
+          "name": "COV_DIM2",
+          "type": "esriFieldTypeDouble",
+          "alias": "Cover Dim-Y (mm)"
+        },
+        {
+          "name": "COV_LVL",
+          "type": "esriFieldTypeDouble",
+          "alias": "Cover Level (M THD)"
+        },
+        {
+          "name": "COV_DU",
+          "type": "esriFieldTypeString",
+          "alias": "Cover Duty"
+        },
+        {
+          "name": "COV_HG",
+          "type": "esriFieldTypeString",
+          "alias": "Cover Hinged"
+        },
+        {
+          "name": "COV_LC",
+          "type": "esriFieldTypeString",
+          "alias": "Cover Locked"
+        },
+        {
+          "name": "MH_DP",
+          "type": "esriFieldTypeDouble",
+          "alias": "Manhole Depth (m)"
+        },
+        {
+          "name": "SHFT_DIM1",
+          "type": "esriFieldTypeDouble",
+          "alias": "Shaft Dim-X / Dia (mm)"
+        },
+        {
+          "name": "SHFT_DIM2",
+          "type": "esriFieldTypeDouble",
+          "alias": "Shaft Dim-Y (mm)"
+        },
+        {
+          "name": "SHFT_DIM3",
+          "type": "esriFieldTypeDouble",
+          "alias": "Shaft Dim-Z (mm)\n"
+        },
+        {
+          "name": "CHMB_DIM1",
+          "type": "esriFieldTypeDouble",
+          "alias": "Chamber Dim-X / Dia (mm)"
+        },
+        {
+          "name": "CHMB_DIM2",
+          "type": "esriFieldTypeDouble",
+          "alias": "Chamber Dim-Y (mm)"
+        },
+        {
+          "name": "CHMB_DIM3",
+          "type": "esriFieldTypeDouble",
+          "alias": "Chamber Dim-Z (mm)"
+        },
+        {
+          "name": "CHMB_CNSTR_CODE",
+          "type": "esriFieldTypeString",
+          "alias": "Chamber Constr Code"
+        },
+        {
+          "name": "NUM_STEP",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Number of Steps"
+        },
+        {
+          "name": "PHOTO",
+          "type": "esriFieldTypeString",
+          "alias": "Photo Path"
+        },
+        {
+          "name": "REMARKS",
+          "type": "esriFieldTypeString",
+          "alias": "Remarks"
+        },
+        {
+          "name": "ED_DATETIME",
+          "type": "esriFieldTypeDate",
+          "alias": "Last Updated On"
+        },
+        {
+          "name": "ED_OPERATOR",
+          "type": "esriFieldTypeString",
+          "alias": "Last Updation By"
+        },
+        {
+          "name": "CREATED_USER",
+          "type": "esriFieldTypeString",
+          "alias": "Created By"
+        },
+        {
+          "name": "CREATED_DATE",
+          "type": "esriFieldTypeDate",
+          "alias": "Created On"
+        },
+        {
+          "name": "LAST_EDITED_USER",
+          "type": "esriFieldTypeString",
+          "alias": "Last Editing By"
+        },
+        {
+          "name": "LAST_EDITED_DATE",
+          "type": "esriFieldTypeDate",
+          "alias": "Last Editing On"
+        },
+        {
+          "name": "CATCH_PIT",
+          "type": "esriFieldTypeString",
+          "alias": "Catch Pit"
+        },
+        {
+          "name": "LATITUDE",
+          "type": "esriFieldTypeDouble",
+          "alias": "Latitude"
+        },
+        {
+          "name": "LONGITUDE",
+          "type": "esriFieldTypeDouble",
+          "alias": "Longitude"
+        },
+        {
+          "name": "ALTITUDE",
+          "type": "esriFieldTypeDouble",
+          "alias": "Altitude (m)"
+        },
+        {
+          "name": "ACCURACY",
+          "type": "esriFieldTypeDouble",
+          "alias": "Accuracy (m)"
+        },
+        {
+          "name": "CP1",
+          "type": "esriFieldTypeString",
+          "alias": "Cardinal Pnt 1"
+        },
+        {
+          "name": "CP2",
+          "type": "esriFieldTypeString",
+          "alias": "Cardinal Pnt 2"
+        },
+        {
+          "name": "CP3",
+          "type": "esriFieldTypeString",
+          "alias": "Cardinal Pnt 3"
+        },
+        {
+          "name": "CP1D",
+          "type": "esriFieldTypeDouble",
+          "alias": "Distance Frm CP 1"
+        },
+        {
+          "name": "CP2D",
+          "type": "esriFieldTypeDouble",
+          "alias": "Distance Frm CP 2"
+        },
+        {
+          "name": "CP3D",
+          "type": "esriFieldTypeDouble",
+          "alias": "Distance Frm CP 3"
+        },
+        {
+          "name": "DATAENTRY_DATETIME",
+          "type": "esriFieldTypeString",
+          "alias": "DataEntry_DateTime"
+        },
+        {
+          "name": "DATAENTRY_OPERATOR",
+          "type": "esriFieldTypeString",
+          "alias": "DataEntry_Operator"
+        },
+        {
+          "name": "YEAR_LAID",
+          "type": "esriFieldTypeDate",
+          "alias": "Year Laid"
+        },
+        {
+          "name": "NODE_NO",
+          "type": "esriFieldTypeInteger",
+          "alias": "Node No"
+        },
+        {
+          "name": "NIS_NO",
+          "type": "esriFieldTypeInteger",
+          "alias": "Network Information Sheet No"
+        },
+        {
+          "name": "Z",
+          "type": "esriFieldTypeDouble",
+          "alias": "Z"
+        },
+        {
+          "name": "ENG_DWG_STATUS",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "ENG_DWG_STATUS"
+        },
+        {
+          "name": "ENABLED",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "ENABLED"
+        },
+        {
+          "name": "ANCILLARYROLE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "ANCILLARYROLE"
+        },
+        {
+          "name": "NO_OF_SC",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Street Connections"
+        },
+        {
+          "name": "NODE_NO_NEW",
+          "type": "esriFieldTypeString",
+          "alias": "Node No (New Format)"
+        },
+        {
+          "name": "PGRIL_INSTALL",
+          "type": "esriFieldTypeString",
+          "alias": "PGRIL_INSTALL"
+        },
+        {
+          "name": "PGRIL_DATE",
+          "type": "esriFieldTypeDate",
+          "alias": "PGRIL_DATE"
+        },
+        {
+          "name": "GPS_CORRECTED",
+          "type": "esriFieldTypeString",
+          "alias": "GPS_CORRECTED"
+        },
+        {
+          "name": "NODE_NO_TXT",
+          "type": "esriFieldTypeString",
+          "alias": "NODE_NO_TXT"
+        },
+        {
+          "name": "PGRILL_MATERIAL",
+          "type": "esriFieldTypeString",
+          "alias": "PGRILL_MATERIAL"
+        },
+        {
+          "name": "COMMENTS",
+          "type": "esriFieldTypeString",
+          "alias": "Comments"
+        },
+        {
+          "name": "NIS_LINK",
+          "type": "esriFieldTypeString",
+          "alias": "Network Information Sheet"
+        },
+        {
+          "name": "CODE",
+          "type": "esriFieldTypeString",
+          "alias": "Code"
+        },
+        {
+          "name": "SUB_CLASS",
+          "type": "esriFieldTypeString",
+          "alias": "Sub_Class"
+        },
+        {
+          "name": "RD_ID",
+          "type": "esriFieldTypeString",
+          "alias": "Road_ID"
+        },
+        {
+          "name": "LOCALITY",
+          "type": "esriFieldTypeString",
+          "alias": "Locality\n_Name"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "UID_PF",
+          "type": "esriFieldTypeString",
+          "alias": "UID_PF"
+        },
+        {
+          "name": "REMARKS_AD_PF",
+          "type": "esriFieldTypeString",
+          "alias": "REMARKS_AD_PF"
+        },
+        {
+          "name": "GRILL_TYPE_PF",
+          "type": "esriFieldTypeString",
+          "alias": "GRILL_TYPE_PF"
+        },
+        {
+          "name": "GIS_SURVEY_PF",
+          "type": "esriFieldTypeString",
+          "alias": "GIS_SURVEY_PF"
+        },
+        {
+          "name": "GROUND_SUR_DATE_PF",
+          "type": "esriFieldTypeDate",
+          "alias": "GROUND_SUR_Date_PF"
+        },
+        {
+          "name": "CP4_PF",
+          "type": "esriFieldTypeString",
+          "alias": "CP4_PF\tCP4_PF"
+        },
+        {
+          "name": "ADDITIONAL_REMRKS_PF",
+          "type": "esriFieldTypeString",
+          "alias": "ADDITIONAL_Remrks_PF"
+        },
+        {
+          "name": "VALIDATOR_NAME_PF",
+          "type": "esriFieldTypeString",
+          "alias": "Validator_Name_PF"
+        },
+        {
+          "name": "FINAL_STATUS_PF",
+          "type": "esriFieldTypeString",
+          "alias": "FINAL_STATUS_PF\tFINAL_STATUS"
+        },
+        {
+          "name": "CREATED_DATE_1",
+          "type": "esriFieldTypeDate",
+          "alias": "CREATED_DATE_1"
+        },
+        {
+          "name": "LAST_EDITED_USER_1",
+          "type": "esriFieldTypeString",
+          "alias": "LAST_EDITED_USER_1"
+        },
+        {
+          "name": "LAST_EDITED_DATE_1",
+          "type": "esriFieldTypeDate",
+          "alias": "LAST_EDITED_DATE_1"
+        },
+        {
+          "name": "CREATED_USER_1",
+          "type": "esriFieldTypeString",
+          "alias": "CREATED_USER_1"
+        },
+        {
+          "name": "GROUND_SURVEY_PF",
+          "type": "esriFieldTypeInteger",
+          "alias": "GROUND_SURVEY_PF"
+        }
+      ]
+    },
+    {
+      "id": 229,
+      "name": "Storm Water Drainage",
+      "parentLayerId": -1,
+      "minScale": 0,
+      "maxScale": 0,
+      "geometryType": null
+    },
+    {
+      "id": 6,
+      "name": "Storm Water Manholes",
+      "parentLayerId": 229,
+      "minScale": 6001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPoint",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "FID"
+        },
+        {
+          "name": "NODE_ID",
+          "type": "esriFieldTypeString",
+          "alias": "Node Id"
+        },
+        {
+          "name": "GROUND_LEV",
+          "type": "esriFieldTypeDouble",
+          "alias": "Ground Level"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Storm Water Drains",
+      "parentLayerId": 229,
+      "minScale": 6001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolyline",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "FID"
+        },
+        {
+          "name": "US_NODE_ID",
+          "type": "esriFieldTypeString",
+          "alias": "Up Stream Node Id"
+        },
+        {
+          "name": "DS_NODE_ID",
+          "type": "esriFieldTypeString",
+          "alias": "Down Stream Node Id"
+        },
+        {
+          "name": "CONDUIT_LE",
+          "type": "esriFieldTypeDouble",
+          "alias": "Conduit Length (m)"
+        },
+        {
+          "name": "SHAPE_1",
+          "type": "esriFieldTypeString",
+          "alias": "Conduit Shape"
+        },
+        {
+          "name": "CONDUIT_WI",
+          "type": "esriFieldTypeDouble",
+          "alias": "Conduit Width (mm)"
+        },
+        {
+          "name": "CONDUIT_HE",
+          "type": "esriFieldTypeDouble",
+          "alias": "Conduit Height (mm)"
+        },
+        {
+          "name": "US_INVERT",
+          "type": "esriFieldTypeDouble",
+          "alias": "Up Stream Invert Level (mTHD)"
+        },
+        {
+          "name": "DS_INVERT",
+          "type": "esriFieldTypeDouble",
+          "alias": "Down Stream Invert Lveel (mTHD)"
+        },
+        {
+          "name": "USER_TEXT2",
+          "type": "esriFieldTypeString",
+          "alias": "Type"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    },
+    {
+      "id": 156,
+      "name": "Road Centerline",
+      "parentLayerId": 161,
+      "minScale": 10001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolyline",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "ROAD_NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Road Name"
+        },
+        {
+          "name": "LAYER",
+          "type": "esriFieldTypeString",
+          "alias": "Layer"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    },
+    {
+      "id": 225,
+      "name": "Road Classification",
+      "parentLayerId": 161,
+      "minScale": 10001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolygon",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "LAYER",
+          "type": "esriFieldTypeString",
+          "alias": "Layer Name"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Name"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "SHAPE.AREA",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.AREA"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    },
+    {
+      "id": 239,
+      "name": "Water Bodies",
+      "parentLayerId": 161,
+      "minScale": 10001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolygon",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "LAYER",
+          "type": "esriFieldTypeString",
+          "alias": "Layer"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Name"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "SHAPE.AREA",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.AREA"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    },
+    {
+      "id": 139,
+      "name": "Manhole",
+      "parentLayerId": 223,
+      "minScale": 1000,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPoint",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "ID",
+          "type": "esriFieldTypeString",
+          "alias": "ID"
+        },
+        {
+          "name": "MCGM_ID",
+          "type": "esriFieldTypeString",
+          "alias": "MCGM_ID"
+        },
+        {
+          "name": "DIAMETER",
+          "type": "esriFieldTypeString",
+          "alias": "DIAMETER(MM)"
+        },
+        {
+          "name": "NAME_OF_TRUNK_MAIN_ON_MH_INSTA",
+          "type": "esriFieldTypeString",
+          "alias": "NAME_OF_TRUNK_MAIN_ON_MH_INSTALLED"
+        },
+        {
+          "name": "SECTION_NAME",
+          "type": "esriFieldTypeString",
+          "alias": "SECTION_NAME"
+        },
+        {
+          "name": "X",
+          "type": "esriFieldTypeDouble",
+          "alias": "X"
+        },
+        {
+          "name": "Y",
+          "type": "esriFieldTypeDouble",
+          "alias": "Y"
+        },
+        {
+          "name": "REMARKS",
+          "type": "esriFieldTypeString",
+          "alias": "REMARKS"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        }
+      ]
+    },
+    {
+      "id": 226,
+      "name": "Road Culvert",
+      "parentLayerId": 223,
+      "minScale": 6001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolyline",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "ID",
+          "type": "esriFieldTypeString",
+          "alias": "ID"
+        },
+        {
+          "name": "MCGM_ID",
+          "type": "esriFieldTypeString",
+          "alias": "MCGM_ID"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "NAME"
+        },
+        {
+          "name": "SECTION_NAME",
+          "type": "esriFieldTypeString",
+          "alias": "SECTION_NAME"
+        },
+        {
+          "name": "TYPE",
+          "type": "esriFieldTypeString",
+          "alias": "TYPE"
+        },
+        {
+          "name": "REMARKS",
+          "type": "esriFieldTypeString",
+          "alias": "REMARKS"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "Shape"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    },
+    {
+      "id": 227,
+      "name": "Roads Bridges Traffic",
+      "parentLayerId": -1,
+      "minScale": 0,
+      "maxScale": 0,
+      "geometryType": null
+    },
+    {
+      "id": 22,
+      "name": "Roadway",
+      "parentLayerId": 227,
+      "minScale": 10001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolygon",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "ROADCLASS",
+          "type": "esriFieldTypeString",
+          "alias": "Road Class"
+        },
+        {
+          "name": "DIRECTION",
+          "type": "esriFieldTypeString",
+          "alias": "Direction"
+        },
+        {
+          "name": "ROAD_TYPE",
+          "type": "esriFieldTypeString",
+          "alias": "Road Type"
+        },
+        {
+          "name": "SUB_TYPE",
+          "type": "esriFieldTypeInteger",
+          "alias": "Subtype"
+        },
+        {
+          "name": "NUM_LANE",
+          "type": "esriFieldTypeString",
+          "alias": "Number of Lanes"
+        },
+        {
+          "name": "ROADNO",
+          "type": "esriFieldTypeString",
+          "alias": "Road No"
+        },
+        {
+          "name": "ROADNAME",
+          "type": "esriFieldTypeString",
+          "alias": "Road Name"
+        },
+        {
+          "name": "WIDTH",
+          "type": "esriFieldTypeString",
+          "alias": "Width"
+        },
+        {
+          "name": "REMARKS",
+          "type": "esriFieldTypeString",
+          "alias": "REMARKS"
+        },
+        {
+          "name": "CODE",
+          "type": "esriFieldTypeString",
+          "alias": "CODE"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "SHAPE.AREA",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.AREA"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    },
+    {
+      "id": 213,
+      "name": "Fire Stations",
+      "parentLayerId": 210,
+      "minScale": 24001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPoint",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Name"
+        },
+        {
+          "name": "TYPE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Type"
+        },
+        {
+          "name": "SUBTYPE",
+          "type": "esriFieldTypeString",
+          "alias": "SubType"
+        },
+        {
+          "name": "LOCATION",
+          "type": "esriFieldTypeString",
+          "alias": "Address/Location"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "ELEVATOR_CONTACT_LIST",
+          "type": "esriFieldTypeString",
+          "alias": "Elevator_Contact_List\n"
+        },
+        {
+          "name": "ELEVATOR_INTERCOM",
+          "type": "esriFieldTypeString",
+          "alias": "Elevator Intercom\n"
+        },
+        {
+          "name": "WORKING_HRS",
+          "type": "esriFieldTypeString",
+          "alias": "Working 24 hours\n"
+        },
+        {
+          "name": "EMPLOYEE_QTY",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Number of Employee\n"
+        },
+        {
+          "name": "EMPLOYEE_MALE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Male staff\n"
+        },
+        {
+          "name": "EMPLOYEE_FEMALE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Female staff\n\n"
+        },
+        {
+          "name": "EMPLOYEE_DIF_ABLE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "EMPLOYEE_DIF_ABLE\n"
+        },
+        {
+          "name": "WORKING_HRS_STR",
+          "type": "esriFieldTypeString",
+          "alias": "Working Hours Start\n"
+        },
+        {
+          "name": "WORKING_HRS_STP",
+          "type": "esriFieldTypeString",
+          "alias": "Working Hours Stop\n\n"
+        }
+      ]
+    },
+    {
+      "id": 214,
+      "name": "Hospitals",
+      "parentLayerId": 210,
+      "minScale": 24001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPoint",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Name"
+        },
+        {
+          "name": "TYPE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Type"
+        },
+        {
+          "name": "SUBTYPE",
+          "type": "esriFieldTypeString",
+          "alias": "SubType"
+        },
+        {
+          "name": "LOCATION",
+          "type": "esriFieldTypeString",
+          "alias": "Address / Location"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "ELEVATOR_CONTACT_LIST",
+          "type": "esriFieldTypeString",
+          "alias": "Elevator Contact List Displayed\n"
+        },
+        {
+          "name": "ELEVATOR_INTERCOM",
+          "type": "esriFieldTypeString",
+          "alias": "Elevator_Intercom\n"
+        },
+        {
+          "name": "WORKING_HRS",
+          "type": "esriFieldTypeString",
+          "alias": "Working 24 hours\n"
+        },
+        {
+          "name": "EMPLOYEE_QTY",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Number of Employee\n"
+        },
+        {
+          "name": "EMPLOYEE_MALE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Male staff\n\n"
+        },
+        {
+          "name": "EMPLOYEE_FEMALE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Female staff\n\n"
+        },
+        {
+          "name": "EMPLOYEE_DIF_ABLE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of differntialy able staff\n\n"
+        },
+        {
+          "name": "WORKING_HRS_STR",
+          "type": "esriFieldTypeString",
+          "alias": "Working Hours Start\n\n"
+        },
+        {
+          "name": "WORKING_HRS_STP",
+          "type": "esriFieldTypeString",
+          "alias": "Working Hours Stop\n\n"
+        },
+        {
+          "name": "VISITORS_QTY",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Number of Visitors\n"
+        },
+        {
+          "name": "VISITING_HRS_STR",
+          "type": "esriFieldTypeString",
+          "alias": "Visiting Hours Start\n\n"
+        },
+        {
+          "name": "VISITING_HRS_STP",
+          "type": "esriFieldTypeString",
+          "alias": "Visiting Hours Stop\n\n"
+        },
+        {
+          "name": "VISITORS_QTY_2",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Number of Visitors\n"
+        },
+        {
+          "name": "VISITING_HRS_STR_2",
+          "type": "esriFieldTypeString",
+          "alias": "Visiting Hours Start\n\n"
+        },
+        {
+          "name": "VISITING_HRS_STP_2",
+          "type": "esriFieldTypeString",
+          "alias": "Visiting Hours Stop\n\n"
+        }
+      ]
+    },
+    {
+      "id": 221,
+      "name": "Police Stations",
+      "parentLayerId": 210,
+      "minScale": 24001,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPoint",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Name"
+        },
+        {
+          "name": "TYPE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Type"
+        },
+        {
+          "name": "SUBTYPE",
+          "type": "esriFieldTypeString",
+          "alias": "SubType"
+        },
+        {
+          "name": "LOCATION",
+          "type": "esriFieldTypeString",
+          "alias": "Address/Location"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "ELEVATOR_CONTACT_LIST",
+          "type": "esriFieldTypeString",
+          "alias": "Elevator Contact List Displayed\n"
+        },
+        {
+          "name": "ELEVATOR_INTERCOM",
+          "type": "esriFieldTypeString",
+          "alias": "No of differntialy able staff\n"
+        },
+        {
+          "name": "WORKING_HRS",
+          "type": "esriFieldTypeString",
+          "alias": "Working 24 hours\n"
+        },
+        {
+          "name": "EMPLOYEE_QTY",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Number of Employee\n"
+        },
+        {
+          "name": "EMPLOYEE_MALE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Male staff\n\n"
+        },
+        {
+          "name": "EMPLOYEE_FEMALE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of Female staff\n"
+        },
+        {
+          "name": "EMPLOYEE_DIF_ABLE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of differntialy able staff\n"
+        },
+        {
+          "name": "WORKING_HRS_STR",
+          "type": "esriFieldTypeString",
+          "alias": "Working Hours Start\n\n"
+        },
+        {
+          "name": "WORKING_HRS_STP",
+          "type": "esriFieldTypeString",
+          "alias": "Working Hours Stop\n\n"
+        }
+      ]
+    },
+    {
+      "id": 344,
+      "name": "Flooding Spots",
+      "parentLayerId": 210,
+      "minScale": 0,
+      "maxScale": 0,
+      "geometryType": "esriGeometryPolygon",
+      "fields": [
+        {
+          "name": "OBJECTID",
+          "type": "esriFieldTypeOID",
+          "alias": "OBJECTID"
+        },
+        {
+          "name": "NAME",
+          "type": "esriFieldTypeString",
+          "alias": "Area Name"
+        },
+        {
+          "name": "TYPE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "Type"
+        },
+        {
+          "name": "LOCATION",
+          "type": "esriFieldTypeString",
+          "alias": "Address / Location"
+        },
+        {
+          "name": "AWSID",
+          "type": "esriFieldTypeString",
+          "alias": "AWSID"
+        },
+        {
+          "name": "STRETCH",
+          "type": "esriFieldTypeDouble",
+          "alias": "Stretch (m)"
+        },
+        {
+          "name": "DEPTH",
+          "type": "esriFieldTypeDouble",
+          "alias": "Depth"
+        },
+        {
+          "name": "AFFECT_ROAD",
+          "type": "esriFieldTypeString",
+          "alias": "Affected Road Name"
+        },
+        {
+          "name": "AFFECT_RAIL",
+          "type": "esriFieldTypeString",
+          "alias": "Whether Railway is Affected"
+        },
+        {
+          "name": "NO_DE_WATER_PUMP",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "No of De-watering Pumps Installed"
+        },
+        {
+          "name": "REMARKS",
+          "type": "esriFieldTypeString",
+          "alias": "Remarks"
+        },
+        {
+          "name": "FEATUREID",
+          "type": "esriFieldTypeString",
+          "alias": "FeatureID"
+        },
+        {
+          "name": "EDUPDATEUSER",
+          "type": "esriFieldTypeString",
+          "alias": "Last Updated User"
+        },
+        {
+          "name": "EDUPDATETIME",
+          "type": "esriFieldTypeDate",
+          "alias": "Last Updated Date"
+        },
+        {
+          "name": "CREATED_USER",
+          "type": "esriFieldTypeString",
+          "alias": "CREATED_USER"
+        },
+        {
+          "name": "CREATED_DATE",
+          "type": "esriFieldTypeDate",
+          "alias": "CREATED_DATE"
+        },
+        {
+          "name": "LAST_EDITED_USER",
+          "type": "esriFieldTypeString",
+          "alias": "LAST_EDITED_USER"
+        },
+        {
+          "name": "LAST_EDITED_DATE",
+          "type": "esriFieldTypeDate",
+          "alias": "LAST_EDITED_DATE"
+        },
+        {
+          "name": "HEIGHT_TO_MSL",
+          "type": "esriFieldTypeDouble",
+          "alias": "Height to Mean Sea Level (M)"
+        },
+        {
+          "name": "AFFECT_ELECTRIC",
+          "type": "esriFieldTypeString",
+          "alias": "Electricity  Cane be Affected"
+        },
+        {
+          "name": "AFFECT_HAZ_MAT",
+          "type": "esriFieldTypeString",
+          "alias": "Other Hazardous Can Affected"
+        },
+        {
+          "name": "WARD",
+          "type": "esriFieldTypeString",
+          "alias": "Ward Name"
+        },
+        {
+          "name": "AFFECT_AREA",
+          "type": "esriFieldTypeString",
+          "alias": "Affected Area"
+        },
+        {
+          "name": "SHAPE",
+          "type": "esriFieldTypeGeometry",
+          "alias": "SHAPE"
+        },
+        {
+          "name": "SUBTYPE",
+          "type": "esriFieldTypeSmallInteger",
+          "alias": "SUBTYPE"
+        },
+        {
+          "name": "AFFECT_BEST_ROUTE",
+          "type": "esriFieldTypeString",
+          "alias": "Affected Best bus route no.\n"
+        },
+        {
+          "name": "AFFECTED_HUT",
+          "type": "esriFieldTypeInteger",
+          "alias": "Affected Hutments (In case of Slum)"
+        },
+        {
+          "name": "AFFECT_POPULATION",
+          "type": "esriFieldTypeInteger",
+          "alias": "Population Affected"
+        },
+        {
+          "name": "SHAPE.AREA",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.AREA"
+        },
+        {
+          "name": "SHAPE.LEN",
+          "type": "esriFieldTypeDouble",
+          "alias": "SHAPE.LEN"
+        }
+      ]
+    }
+  ]
+}

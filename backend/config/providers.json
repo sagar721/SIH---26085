@@ -1,0 +1,63 @@
+{
+  "providers": {
+    "open_meteo": {
+      "name": "Open-Meteo",
+      "type": "WEATHER_FORECAST",
+      "base_url": "https://api.open-meteo.com/v1/forecast",
+      "requires_key": false,
+      "cache_ttl_seconds": 900,
+      "attribution": "Weather data by Open-Meteo.com (CC-BY 4.0)"
+    },
+    "tomorrow_io": {
+      "name": "Tomorrow.io",
+      "type": "WEATHER_NOWCAST",
+      "base_url": "https://api.tomorrow.io/v4/weather",
+      "requires_key": true,
+      "env_key": "TOMORROW_API_KEY",
+      "cache_ttl_seconds": 600,
+      "attribution": "Tomorrow.io Weather API"
+    },
+    "imd": {
+      "name": "India Meteorological Department (IMD)",
+      "type": "OBSERVED_RADAR",
+      "base_url": "https://mausam.imd.gov.in",
+      "requires_key": true,
+      "env_key": "IMD_API_KEY",
+      "cache_ttl_seconds": 900,
+      "attribution": "India Meteorological Department, Ministry of Earth Sciences"
+    },
+    "nasa_gpm": {
+      "name": "NASA GPM IMERG",
+      "type": "SATELLITE_PRECIPITATION",
+      "base_url": "https://gpm.nasa.gov",
+      "requires_key": true,
+      "env_key": "EARTHDATA_TOKEN",
+      "cache_ttl_seconds": 3600,
+      "attribution": "NASA Global Precipitation Measurement (GPM) Mission"
+    },
+    "bmc_gis": {
+      "name": "BMC / MCGM ArcGIS REST Portal",
+      "type": "MUNICIPAL_GIS",
+      "base_url": "https://prsrvgisapp.mcgm.gov.in/server/rest/services/mcgm/MCGMGIS_Departments_Master_All_Layers/MapServer",
+      "requires_key": false,
+      "cache_ttl_seconds": 86400,
+      "attribution": "Brihanmumbai Municipal Corporation (BMC/MCGM) GIS Portal"
+    },
+    "osm": {
+      "name": "OpenStreetMap Overpass API",
+      "type": "GEOGRAPHIC_FEATURES",
+      "base_url": "https://overpass-api.de/api/interpreter",
+      "requires_key": false,
+      "cache_ttl_seconds": 86400,
+      "attribution": "OpenStreetMap contributors (ODbL)"
+    },
+    "dem_copernicus": {
+      "name": "Copernicus DEM GLO-30",
+      "type": "ELEVATION_DSM",
+      "description": "30m Digital Surface Model",
+      "requires_key": false,
+      "cache_ttl_seconds": 604800,
+      "attribution": "Copernicus DEM provided by ESA / Airbus (Open Access DSM)"
+    }
+  }
+}

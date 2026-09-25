@@ -15,14 +15,16 @@ import { realAdapter } from '../../api/adapters/RealDataAdapter';
 import { MUMBAI_OVERVIEW } from '../../types';
 import { LayerControl } from './LayerControl';
 import { MapLegend } from './MapLegend';
+import { FullscreenToggle } from './FullscreenToggle';
 import { computeRainfallAdjustedRisk, getCriticalityTier, getRoadStatus, ROAD_STATUS_COLOR } from '../../lib/riskModel';
 import {
   floodDepthMapLibreStepExpression, rainfallMapLibreStepExpression,
-  drainageNodeStatus, DRAINAGE_STATUS_COLOR,
+  drainageNodeStatus, DRAINAGE_STATUS_COLOR, INFRA_STATUS_COLOR,
 } from '../../lib/colorRamps';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 import type { Feature, FeatureCollection } from 'geojson';
 
-// Phase 9 — visual (not physical) exaggeration for the 3D flood-depth
+// Visual (not physical) exaggeration for the 3D flood-depth
 // pillars: real simulated depths are 0-1.5m, which would be a few pixels
 // tall next to buildings (6m+) and 1.5x-exaggerated terrain. 25x makes a
 // 0.3m flood read as a ~7.5m pillar — clearly a stylized visualization aid,
@@ -56,7 +58,7 @@ function buildFloodExtrusionFeatures(frame: FeatureCollection | null): FeatureCo
 
 // Satellite/hybrid basemap — replaces the flat CartoDB Positron style
 // (previously chosen deliberately for a "trusted instrument" look — see
-// FLOODWATCH_V3_DESIGN_SPEC.md §4.5/§8 — superseded by an explicit request
+// FLOODCAST_V3_DESIGN_SPEC.md §4.5/§8 — superseded by an explicit request
 // for a Google Earth-style tilted 3D satellite view). Esri World Imagery is
 // a public, keyless raster tile service (no API key exists or is needed —
 // this project has no Mapbox/Maptiler/Google Maps Platform credential
@@ -150,19 +152,18 @@ export const MapContainer: React.FC = React.memo(() => {
   const viewMode = useUIStore((state) => state.viewMode);
   const { rainfallFeatures, floodFeatures, infraFeatures, roadsFeatures } = useFloodData();
   const { roadsRisk, infraRisk, effectiveRainfallMmHr, scenarioActive } = useRainfallAwareRisk();
-  const { origin: routeOrigin, destination: routeDestination, routes: computedRoutes, normalRouteComparison, activeMode: routeMode } = useRoutingStore();
+  const { origin: routeOrigin, destination: routeDestination, routes: computedRoutes, normalRouteComparison, activeMode: routeMode, externalRoute } = useRoutingStore();
   const layerVisibility = useLayerStore((state) => state.visibility);
-  // Phase 5 — precomputed drainage-graph flood-propagation frames (Phase 3)
-  // and the directed drainage graph itself (Phase 2). Independent of the
-  // pre-existing Scenario Mode sliders / MockAdapter flood-extent layer
-  // above, which are untouched.
+  // Precomputed drainage-graph flood-propagation frames and the directed
+  // drainage graph itself. Independent of the pre-existing Scenario Mode
+  // sliders / MockAdapter flood-extent layer above, which are untouched.
   const { nodes: drainageNodesFeatures, edges: drainageEdgesFeatures } = useDrainageGraph();
   const { frame: floodSimFrame, tMin: floodSimTMin, scenario: floodSimScenario } = useFloodSimulationFrame();
   // Performance fix — see usePrefetchFloodFrames.ts: warms the cache for all
   // 7 timesteps as soon as this zone is entered, so Play never blocks on a
   // network fetch mid-animation.
   usePrefetchFloodFrames(activeZone.id, 'design_storm');
-  // Phase 7 — What-If: baseline/intervention frames are only fetched once the
+  // What-If: baseline/intervention frames are only fetched once the
   // user actually opens the What-If panel and picks a map view (`enabled`
   // below), never unconditionally on every load.
   const whatIfView = useWhatIfStore((s) => s.view);
@@ -171,8 +172,8 @@ export const MapContainer: React.FC = React.memo(() => {
   const { frame: whatIfInterventionFrame } = useFloodSimulationFrame('whatif_intervention', whatIfFetchEnabled);
 
   // Which flood-simulation FeatureCollection actually drives the map's flood
-  // layer right now — the normal Phase 3 frame, or (Phase 7) one of the
-  // What-If panel's baseline/intervention/difference views.
+  // layer right now — the normal simulation frame, or one of the What-If
+  // panel's baseline/intervention/difference views.
   const activeFloodSimFrame = React.useMemo(() => {
     if (whatIfView === 'off') return floodSimFrame;
     if (whatIfView === 'baseline') return whatIfBaselineFrame;
@@ -192,7 +193,7 @@ export const MapContainer: React.FC = React.memo(() => {
       }),
     };
   }, [whatIfView, floodSimFrame, whatIfBaselineFrame, whatIfInterventionFrame]);
-  // Phase 9 — same flood data, reshaped into small polygons for the 3D
+  // Same flood data, reshaped into small polygons for the 3D
   // fill-extrusion pillars (MapLibre circle layers can't be extruded).
   const floodExtrusionFeatures = React.useMemo(
     () => buildFloodExtrusionFeatures(activeFloodSimFrame as unknown as FeatureCollection | null),
@@ -220,6 +221,11 @@ export const MapContainer: React.FC = React.memo(() => {
   slopeGridRef.current = slopeGrid;
   const susceptibilityGridRef = useRef<GridPoint[]>([]);
   susceptibilityGridRef.current = susceptibilityGrid;
+  const computedRoutesRef = useRef(computedRoutes);
+  computedRoutesRef.current = computedRoutes;
+  const simulationMode = useSimulationStore((s) => s.mode);
+  const demoModeRef = useRef(simulationMode === 'demo');
+  demoModeRef.current = simulationMode === 'demo';
 
   // Infra carrying real susceptibility_score, joined onto the real-geometry
   // infra collection already used for map rendering — joins on rounded
@@ -250,10 +256,10 @@ export const MapContainer: React.FC = React.memo(() => {
     };
   }, [infraFeatures, infraRisk]);
 
-  // Phase 8 — `roadsFeatures` (from useFloodData) already carries `affected`/
+  // `roadsFeatures` (from useFloodData) already carries `affected`/
   // `simulatedFloodDepthM`/`floodSeverity` grounded in the REAL precomputed
   // flood-simulation frame (see enrichRoadsWithSimulatedDepth in
-  // useFloodData.ts — same source Phase 6 routing uses). This memo only adds
+  // useFloodData.ts — same source routing uses). This memo only adds
   // the categorical NORMAL/WATCH/FLOODED/HIGH RISK label on top, combining
   // that simulated depth with the existing continuous susceptibility/rainfall
   // risk score (unchanged, still used in the click popup below).
@@ -270,9 +276,9 @@ export const MapContainer: React.FC = React.memo(() => {
     };
   }, [roadsFeatures, effectiveRainfallMmHr]);
 
-  // Drainage-graph nodes (Phase 2, static ESTIMATED capacity) augmented with
+  // Drainage-graph nodes (static ESTIMATED capacity) augmented with
   // the CURRENT timestep's inflow/surcharge from the precomputed flood-
-  // simulation frame (Phase 3) — same node ids, so a coordinate-keyed join
+  // simulation frame — same node ids, so a coordinate-keyed join
   // (both come from the same build_drainage_graph.py output).
   const drainageNodesWithStatus = React.useMemo<FeatureCollection | null>(() => {
     if (!drainageNodesFeatures) return null;
@@ -406,7 +412,7 @@ export const MapContainer: React.FC = React.memo(() => {
         // through setData() on every T+0..180 tick. setData() forces a full
         // re-tessellation of every road; feature-state is an O(1)-per-feature paint
         // update. This was the dominant cost behind the ~4.8fps measured during
-        // T+0->T+180 playback (Phase 9 audit). promoteId lets MapLibre key each
+        // T+0->T+180 playback. promoteId lets MapLibre key each
         // feature's state by its real OSM id instead of requiring a synthetic one.
         m.addSource('roads-source', { type: 'geojson', data: emptyFC, promoteId: 'osm_id' });
         // White casing under the road line — over satellite imagery a plain
@@ -483,7 +489,7 @@ export const MapContainer: React.FC = React.memo(() => {
           }
         });
 
-        // Flood Simulation Layer (Phase 1-4 precomputed, drainage-graph-based; SIMULATED) —
+        // Flood Simulation Layer (precomputed, drainage-graph-based; SIMULATED) —
         // T+0..180min depth at each drainage-graph node, ironbow-style depth color ramp
         // (see lib/colorRamps.ts). Independent of, and rendered above, the Scenario-Mode
         // flood-fill layer above.
@@ -502,7 +508,7 @@ export const MapContainer: React.FC = React.memo(() => {
           },
         });
 
-        // Phase 9 — genuine 3D flood-depth visualization: small extruded
+        // Genuine 3D flood-depth visualization: small extruded
         // pillars (fill-extrusion) at each flooded node, height proportional
         // to SIMULATED depth with a documented visual exaggeration (actual
         // flood depths are cm-scale and would be imperceptible against city-
@@ -521,7 +527,7 @@ export const MapContainer: React.FC = React.memo(() => {
           },
         });
 
-        // Drainage graph (Phase 2 — INFERRED flow direction / ESTIMATED capacity;
+        // Drainage graph (INFERRED flow direction / ESTIMATED capacity;
         // NEVER the official MCGM underground network — see click popups below).
         m.addSource('drainage-graph-edges-source', { type: 'geojson', data: emptyFC });
         m.addLayer({
@@ -548,7 +554,7 @@ export const MapContainer: React.FC = React.memo(() => {
           },
         });
 
-        // Normal (flood-blind) comparison route — Phase 6 "NORMAL ROUTE vs
+        // Normal (flood-blind) comparison route — "NORMAL ROUTE vs
         // FLOOD-AWARE SAFE ROUTE". Dashed, drawn beneath the flood-aware
         // route below, so the two are visually distinguishable wherever they diverge.
         m.addSource('route-normal-source', { type: 'geojson', data: emptyFC });
@@ -577,6 +583,18 @@ export const MapContainer: React.FC = React.memo(() => {
           paint: { 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.9 },
         }, 'route-line');
 
+        // External routing fallback (Priority 3, lib/externalRouting.ts) —
+        // only rendered when the local flood-aware graph couldn't connect
+        // the pair at all. Dashed amber, visually distinct from both the
+        // grey normal route and the blue/green flood-aware route, since this
+        // one carries NO flood-awareness at all.
+        m.addSource('route-external-source', { type: 'geojson', data: emptyFC });
+        m.addLayer({
+          id: 'route-external-line', type: 'line', source: 'route-external-source',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#C9A227', 'line-width': 4, 'line-opacity': 0.9, 'line-dasharray': [2, 1.5] },
+        });
+
         // Origin/destination markers for the active route.
         m.addSource('route-endpoints-source', { type: 'geojson', data: emptyFC });
         m.addLayer({
@@ -592,7 +610,7 @@ export const MapContainer: React.FC = React.memo(() => {
         m.addLayer({
           id: 'infra-point', type: 'circle', source: 'infra-source',
           paint: {
-            'circle-color': ['match', ['get', 'status'], 'CRITICAL', '#B4392C', 'AT RISK', '#B9762E', '#3D7A5C'],
+            'circle-color': ['match', ['get', 'status'], 'CRITICAL', INFRA_STATUS_COLOR.CRITICAL, 'AT RISK', INFRA_STATUS_COLOR['AT RISK'], INFRA_STATUS_COLOR.SAFE],
             'circle-radius': 6, 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff'
           }
         });
@@ -605,17 +623,22 @@ export const MapContainer: React.FC = React.memo(() => {
           const susceptibility = typeof p.susceptibility_score === 'number' ? p.susceptibility_score : null;
           const impact = susceptibility !== null ? computeRainfallAdjustedRisk(susceptibility, effectiveRainfallRef.current) : null;
           const tier = getCriticalityTier(type);
+          const classificationReason = status === 'CRITICAL'
+            ? `CRITICAL — simulated depth (${depthMeters}m) exceeds the 0.5m threshold`
+            : status === 'AT RISK'
+              ? `AT RISK — simulated depth (${depthMeters}m) exceeds 0.1m but is below the 0.5m CRITICAL threshold`
+              : `SAFE — simulated depth (${depthMeters}m) is at or below the 0.1m threshold`;
           popup.current?.remove();
           popup.current = new maplibregl.Popup({ closeButton: true, offset: 12 })
             .setLngLat(feature.geometry.coordinates as [number, number])
             .setHTML(
               `<div style="font: 12px sans-serif; color: #111; max-width:230px">
                 <strong>${name}</strong><br/>
-                ${type} &middot; ${status} &middot; criticality: ${tier.replace('_', ' ')}<br/>
-                Simulated flood depth: ${depthMeters}m<br/>
+                ${type} &middot; criticality: ${tier.replace('_', ' ')}<br/>
+                Classification: <strong>${classificationReason}</strong><br/>
                 ${susceptibility !== null ? `Susceptibility: ${susceptibility.toFixed(2)} &middot; Exposure (now, weighted): ${impact!.toFixed(2)}<br/>` : ''}
                 Rainfall: ${effectiveRainfallRef.current.toFixed(1)} mm/h${scenarioActiveRef.current ? ' (SIMULATED scenario)' : ''}<br/>
-                <span style="color:#666; font-size:10px">Location: ${_source ?? 'OpenStreetMap'} &middot; Susceptibility: MODELLED</span>
+                <span style="color:#666; font-size:10px">Location: ${_source ?? 'OpenStreetMap'} &middot; Susceptibility: MODELLED &middot; Flood depth: SIMULATED</span>
               </div>`
             )
             .addTo(m);
@@ -657,8 +680,14 @@ export const MapContainer: React.FC = React.memo(() => {
         m.on('mouseenter', 'roads-line', () => { m.getCanvas().style.cursor = 'pointer'; });
         m.on('mouseleave', 'roads-line', () => { m.getCanvas().style.cursor = ''; });
 
-        // Buildings — REAL OSM footprints
-        m.on('click', 'buildings-fill', (e) => {
+        // Buildings — REAL OSM footprints. Shared between the flat overview
+        // layer (buildings-fill) and the 3D extruded layer (buildings-extrusion,
+        // shown instead of buildings-fill whenever a pilot zone is open) — both
+        // read the same 'buildings-source', so one handler covers both.
+        // Previously only buildings-fill had a click handler: clicking a
+        // building in the primary 3D pilot-zone view (the layer actually shown
+        // there) silently did nothing — found during the Demo Mode audit.
+        const handleBuildingsClick = (e: maplibregl.MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
           const f = e.features?.[0];
           if (!f) return;
           const p = f.properties as Record<string, unknown>;
@@ -673,9 +702,13 @@ export const MapContainer: React.FC = React.memo(() => {
               ${heightNote}<br/>
               <span style="color:#666; font-size:10px">Provenance: footprint REAL (OSM)</span>
             </div>`);
-        });
+        };
+        m.on('click', 'buildings-fill', handleBuildingsClick);
+        m.on('click', 'buildings-extrusion', handleBuildingsClick);
         m.on('mouseenter', 'buildings-fill', () => { m.getCanvas().style.cursor = 'pointer'; });
         m.on('mouseleave', 'buildings-fill', () => { m.getCanvas().style.cursor = ''; });
+        m.on('mouseenter', 'buildings-extrusion', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'buildings-extrusion', () => { m.getCanvas().style.cursor = ''; });
 
         // Inferred surface drainage — DEM-derived flow accumulation (INFERRED, never official)
         m.on('click', 'inferred-drainage-line', (e) => {
@@ -693,7 +726,7 @@ export const MapContainer: React.FC = React.memo(() => {
         m.on('mouseleave', 'inferred-drainage-line', () => { m.getCanvas().style.cursor = ''; });
 
         // Flood simulation nodes — SIMULATED depth at this timestep, from the
-        // Phase 1-4 precomputed drainage-graph propagation engine.
+        // precomputed drainage-graph propagation engine.
         const SCENARIO_LABELS: Record<string, string> = {
           observed: 'OBSERVED (real, dry)',
           design_storm: 'SIMULATED design storm',
@@ -753,6 +786,138 @@ export const MapContainer: React.FC = React.memo(() => {
         m.on('mouseenter', 'drainage-graph-edges-line', () => { m.getCanvas().style.cursor = 'pointer'; });
         m.on('mouseleave', 'drainage-graph-edges-line', () => { m.getCanvas().style.cursor = ''; });
 
+        // Water bodies / nallas — REAL OSM geometry.
+        m.on('click', 'water-fill', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, unknown>;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:220px">
+              <strong>${p.name || 'Water body'}</strong><br/>
+              ${p.natural || p.waterway || 'water'}<br/>
+              <span style="color:#666; font-size:10px">Provenance: REAL (OpenStreetMap)</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'water-fill', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'water-fill', () => { m.getCanvas().style.cursor = ''; });
+        m.on('click', 'water-line', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, unknown>;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:220px">
+              <strong>${p.name || 'Nalla / waterway'}</strong><br/>
+              ${p.waterway || 'waterway'}<br/>
+              <span style="color:#666; font-size:10px">Provenance: REAL (OpenStreetMap)</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'water-line', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'water-line', () => { m.getCanvas().style.cursor = ''; });
+
+        // City-context major roads — REAL OSM geometry, no simulated status
+        // (that only exists for the pilot-zone road network above).
+        m.on('click', 'city-roads-line', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, unknown>;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:220px">
+              <strong>${p.name || 'Unnamed road'}</strong><br/>
+              ${p.highway || 'road'}<br/>
+              <span style="color:#666; font-size:10px">Provenance: REAL (OpenStreetMap) &middot; open a pilot zone for simulated flood status</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'city-roads-line', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'city-roads-line', () => { m.getCanvas().style.cursor = ''; });
+
+        // Rainfall — REAL GSMaP in Live Mode, SIMULATED design-storm intensity in Demo Mode.
+        m.on('click', 'rainfall-fill', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, unknown>;
+          const intensity = typeof p.intensity === 'number' ? p.intensity : null;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:220px">
+              <strong>Rainfall intensity</strong><br/>
+              ${intensity !== null ? `${intensity.toFixed(1)} mm/hr` : 'no reading'}<br/>
+              <span style="color:#666; font-size:10px">Provenance: ${demoModeRef.current ? 'SIMULATED (Demo Mode design-storm scenario)' : 'REAL (GSMaP satellite estimate)'}</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'rainfall-fill', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'rainfall-fill', () => { m.getCanvas().style.cursor = ''; });
+
+        // Legacy Scenario-Mode flood-extent polygons.
+        m.on('click', 'flood-fill', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, unknown>;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:220px">
+              <strong>Simulated flood extent</strong><br/>
+              Depth: ${p.depthMeters ?? 'n/a'}m &middot; Risk: ${p.riskLevel ?? 'n/a'}<br/>
+              <span style="color:#666; font-size:10px">Provenance: SIMULATED — a stylized extent, see the flood-depth (node) layer for the primary simulation</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'flood-fill', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'flood-fill', () => { m.getCanvas().style.cursor = ''; });
+
+        // Routing — the active flood-aware route, the flood-blind comparison
+        // route, and the origin/destination markers. Pulls live route detail
+        // (risk, avoided roads, time penalty) from computedRoutesRef so the
+        // popup always reflects the currently-displayed route, not a stale
+        // closure value.
+        m.on('click', 'route-line', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const routeMode = (f.properties as Record<string, unknown>).mode as string;
+          const route = computedRoutesRef.current?.[routeMode as 'fastest' | 'safest' | 'balanced'];
+          if (!route || !route.found) return;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:240px">
+              <strong>${routeMode.charAt(0).toUpperCase() + routeMode.slice(1)} route</strong><br/>
+              ${route.distanceKm.toFixed(2)}km &middot; ~${Math.round(route.etaMinutes)}min &middot; risk: ${route.riskLabel}<br/>
+              ${route.avoidedRoads.length} road(s) avoided vs. the flood-blind normal route<br/>
+              ${route.floodedSegmentsOnPath > 0 ? `Still crosses ${route.floodedSegmentsOnPath} at-risk segment(s)<br/>` : ''}
+              <span style="color:#666; font-size:10px">Provenance: geometry REAL (OSM) &middot; routing decision MODELLED</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'route-line', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'route-line', () => { m.getCanvas().style.cursor = ''; });
+        m.on('click', 'route-normal-line', (e) => {
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:230px">
+              <strong>Flood-blind "normal" route</strong><br/>
+              What a non-flood-aware navigation app would have suggested — shown only for comparison.<br/>
+              <span style="color:#666; font-size:10px">Provenance: geometry REAL (OSM) &middot; ignores flood status entirely</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'route-normal-line', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'route-normal-line', () => { m.getCanvas().style.cursor = ''; });
+        m.on('click', 'route-endpoints', (e) => {
+          const f = e.features?.[0];
+          if (!f) return;
+          const p = f.properties as Record<string, unknown>;
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:220px">
+              <strong>${p.role === 'origin' ? 'Origin' : 'Destination'}</strong><br/>
+              ${p.name ?? ''}
+            </div>`);
+        });
+        m.on('mouseenter', 'route-endpoints', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'route-endpoints', () => { m.getCanvas().style.cursor = ''; });
+        m.on('click', 'route-external-line', (e) => {
+          const f = e.features?.[0];
+          const provider = (f?.properties as Record<string, unknown> | undefined)?.provider ?? 'an external routing service';
+          showInspectPopup(e.lngLat, `
+            <div style="font: 12px sans-serif; color:#111; max-width:230px">
+              <strong>External routing fallback</strong><br/>
+              Generated via ${provider}.<br/>
+              <span style="color:#666; font-size:10px">This route has NO flood-awareness — the local flood-aware graph could not connect these two points.</span>
+            </div>`);
+        });
+        m.on('mouseenter', 'route-external-line', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'route-external-line', () => { m.getCanvas().style.cursor = ''; });
+
         // Raster layers (DEM elevation, slope, flood susceptibility) — MapLibre
         // image sources have no queryable per-pixel features, so a per-layer
         // 'click' listener (like the vector layers above) never fires for them.
@@ -764,6 +929,8 @@ export const MapContainer: React.FC = React.memo(() => {
         const VECTOR_INTERACTIVE_LAYERS = [
           'infra-point', 'roads-line', 'buildings-fill', 'buildings-extrusion', 'inferred-drainage-line',
           'flood-simulation-circle', 'flood-simulation-extrusion', 'drainage-graph-nodes-circle', 'drainage-graph-edges-line',
+          'water-fill', 'water-line', 'city-roads-line', 'rainfall-fill', 'flood-fill',
+          'route-line', 'route-normal-line', 'route-endpoints', 'route-external-line',
         ];
         const RASTER_LAYERS: Array<{ id: string; grid: () => GridPoint[]; label: string; unit: string; provenance: string; digits: number }> = [
           { id: 'flood-susceptibility-fill', grid: () => susceptibilityGridRef.current, label: 'Flood susceptibility', unit: '(0-1 index)', provenance: 'MODELLED', digits: 3 },
@@ -859,7 +1026,7 @@ export const MapContainer: React.FC = React.memo(() => {
     }
   }, [viewMode, styleLoaded, layerVisibility.buildings]);
 
-  // Phase 9 — same flat-vs-extruded split for the flood-depth layer: flat
+  // Same flat-vs-extruded split for the flood-depth layer: flat
   // circles normally, 3D pillars only in "3D mode" (zone view + terrain
   // toggle on, so the pillars have real terrain underneath them to sit on).
   useEffect(() => {
@@ -1002,6 +1169,14 @@ export const MapContainer: React.FC = React.memo(() => {
     };
     setSrc('route-source', routeFC);
 
+    const externalRouteFC: FeatureCollection = {
+      type: 'FeatureCollection',
+      features: externalRoute
+        ? [{ type: 'Feature', geometry: { type: 'LineString', coordinates: externalRoute.path }, properties: { provider: externalRoute.provider } }]
+        : [],
+    };
+    setSrc('route-external-source', externalRouteFC);
+
     const normalRoute = normalRouteComparison?.normalRoute;
     const normalRouteFC: FeatureCollection = {
       type: 'FeatureCollection',
@@ -1015,9 +1190,9 @@ export const MapContainer: React.FC = React.memo(() => {
     if (routeOrigin) endpointFeatures.push({ type: 'Feature', geometry: { type: 'Point', coordinates: routeOrigin.coord }, properties: { role: 'origin', name: routeOrigin.name } });
     if (routeDestination) endpointFeatures.push({ type: 'Feature', geometry: { type: 'Point', coordinates: routeDestination.coord }, properties: { role: 'destination', name: routeDestination.name } });
     setSrc('route-endpoints-source', { type: 'FeatureCollection', features: endpointFeatures });
-  }, [styleLoaded, rainfallFeatures, floodFeatures, infraWithRisk, buildingsFeatures, waterFeatures, boundaryFeatures, cityRoadsFeatures, inferredDrainageFeatures, computedRoutes, normalRouteComparison, routeMode, routeOrigin, routeDestination, activeFloodSimFrame, floodExtrusionFeatures, drainageNodesWithStatus, drainageEdgesFeatures]);
+  }, [styleLoaded, rainfallFeatures, floodFeatures, infraWithRisk, buildingsFeatures, waterFeatures, boundaryFeatures, cityRoadsFeatures, inferredDrainageFeatures, computedRoutes, normalRouteComparison, routeMode, routeOrigin, routeDestination, activeFloodSimFrame, floodExtrusionFeatures, drainageNodesWithStatus, drainageEdgesFeatures, externalRoute]);
 
-  // Performance fix (Phase 9 audit — the ~4.8fps measured during T+0->T+180
+  // Performance fix (the ~4.8fps measured during T+0->T+180
   // playback): road GEOMETRY (3200+ features) is set into 'roads-source'
   // only when it actually changes — i.e. on zone switch — using the STATIC
   // roadsRisk collection (useRainfallAwareRisk fetches it once per zone,
@@ -1079,14 +1254,20 @@ export const MapContainer: React.FC = React.memo(() => {
         </div>
       )}
 
+      <FullscreenToggle />
       <LayerControl />
       <MapLegend />
 
       <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-black/60 text-white/80 px-4 py-2 rounded-full text-xs backdrop-blur-sm pointer-events-none border border-white/10 shadow-lg text-center max-w-md">
+        {simulationMode === 'demo' && (
+          <span className="font-bold text-amber-300 tracking-wide">SCENARIO SIMULATION (HYPOTHETICAL) &middot; </span>
+        )}
         {viewMode === 'overview'
           ? 'Mumbai city context: boundary, major roads & water are REAL (OSM). Fly into a pilot zone for building-level detail.'
           : whatIfView !== 'off'
           ? `${activeZone.name}: showing What-If ${whatIfView.toUpperCase()} (T+${floodSimTMin}min) — SIMULATED hypothetical drainage-capacity comparison, not a planned MCGM project.`
+          : simulationMode === 'demo'
+          ? `${activeZone.name}: self-contained illustrative simulation (T+${floodSimTMin}min) — every flood/road/infrastructure value on screen is SYNTHETIC, not real observed data.`
           : `${activeZone.name}: roads, buildings, water & critical infrastructure are REAL (OSM/MCGM). Flood simulation (T+${floodSimTMin}min, ${floodSimScenario === 'design_storm' ? 'SIMULATED design storm' : 'OBSERVED, dry'}) and drainage graph (INFERRED/ESTIMATED) are available via Layers.`}
       </div>
     </div>

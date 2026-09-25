@@ -29,7 +29,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // eslint-disable-next-line no-console
-    console.error(`[FLOODWATCH ErrorBoundary: ${this.props.label}] Uncaught rendering error`, error, errorInfo);
+    console.error(`[FLOODCAST ErrorBoundary: ${this.props.label}] Uncaught rendering error`, error, errorInfo);
   }
 
   handleReload = () => {
@@ -42,7 +42,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         <div className="w-full h-full min-h-[160px] flex flex-col items-center justify-center gap-3 bg-background/95 border border-red-500/30 rounded-xl p-6 text-center">
           <div className="flex items-center gap-2">
             <AlertOctagon className="w-5 h-5 text-red-700" />
-            <span className="text-sm font-bold tracking-widest text-foreground">FLOODWATCH</span>
+            <span className="text-sm font-bold tracking-widest text-foreground">FLOODCAST</span>
           </div>
           <div>
             <p className="text-sm font-semibold text-red-700">Component failed</p>

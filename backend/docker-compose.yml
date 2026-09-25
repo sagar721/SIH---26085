@@ -1,0 +1,108 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: mflood_postgis
+    environment:
+      POSTGRES_USER: mflood
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: mflood_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mflood -d mflood_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: mflood_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: mflood_backend
+    environment:
+      - DATABASE_URL=postgresql+psycopg://mflood:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/mflood_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}
+      - AUTH_ADMIN_USERNAME=${AUTH_ADMIN_USERNAME:?set AUTH_ADMIN_USERNAME in .env}
+      - AUTH_ADMIN_PASSWORD_HASH=${AUTH_ADMIN_PASSWORD_HASH:?set AUTH_ADMIN_PASSWORD_HASH in .env — generate with hash_password() from app.core.auth, never a plaintext password}
+      - ENVIRONMENT=production
+      # This compose stack runs a dedicated `scheduler` service below, so the
+      # API process doesn't also run the weather/data refresh loops itself —
+      # only relevant here; a plain local `python scripts/run.py` never sets
+      # this and keeps running them in-process with zero extra setup.
+      - RUN_SCHEDULED_REFRESHES_IN_API=false
+      - DEBUG=False
+      - HOST=0.0.0.0
+      - PORT=8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - runtime_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build: .
+    container_name: mflood_worker
+    command: celery -A app.workers.celery_app.celery_app worker --loglevel=INFO --concurrency=2
+    environment:
+      - DATABASE_URL=postgresql+psycopg://mflood:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/mflood_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}
+      - AUTH_ADMIN_USERNAME=${AUTH_ADMIN_USERNAME:?set AUTH_ADMIN_USERNAME in .env}
+      - AUTH_ADMIN_PASSWORD_HASH=${AUTH_ADMIN_PASSWORD_HASH:?set AUTH_ADMIN_PASSWORD_HASH in .env — generate with hash_password() from app.core.auth, never a plaintext password}
+      - ENVIRONMENT=production
+      - RUN_SCHEDULED_REFRESHES_IN_API=false
+    volumes:
+      - runtime_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Optional, production-oriented: runs the weather/data refresh loops as
+  # their own long-lived process instead of inside the API. Only meaningful
+  # alongside RUN_SCHEDULED_REFRESHES_IN_API=false above — remove this
+  # service (and that env var) to go back to the simpler single-process
+  # default, which is exactly what local development already uses.
+  scheduler:
+    build: .
+    container_name: mflood_scheduler
+    command: python scripts/run_scheduler.py
+    environment:
+      - DATABASE_URL=postgresql+psycopg://mflood:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/mflood_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - ENVIRONMENT=production
+      - RUN_SCHEDULED_REFRESHES_IN_API=false
+    volumes:
+      - runtime_data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  runtime_data:

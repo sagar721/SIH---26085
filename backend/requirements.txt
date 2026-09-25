@@ -1,0 +1,16 @@
+fastapi==0.141.1
+uvicorn==0.52.4
+pydantic-settings==2.15.0
+httpx==0.28.1
+SQLAlchemy==2.0.52
+psycopg[binary]==3.3.5
+GeoAlchemy2==0.20.0
+pyproj==3.8.0
+shapely==2.1.2
+networkx==3.6.1
+scipy==1.18.1
+celery[redis]==5.5.3
+PyJWT==2.10.1
+cryptography==44.0.1
+alembic==1.16.5
+prometheus-client==0.22.1

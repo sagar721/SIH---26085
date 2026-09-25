@@ -20,10 +20,10 @@ import { computeRainfallAdjustedRisk, getCriticalityWeight } from './riskModel';
 
 // A road is impassable by a normal vehicle above this simulated depth —
 // consistent with common emergency-management guidance that ~0.3m of
-// moving water can stall or float a passenger vehicle. Phase 6: this no
+// moving water can stall or float a passenger vehicle. This value no
 // longer marks a hard block by itself — see floodSeverityTier() below — it
-// now marks the floor of the HIGH (heavily-penalized-but-still-routable)
-// tier, with the hard block moved to SEVERE_BLOCK_DEPTH_M.
+// marks the floor of the HIGH (heavily-penalized-but-still-routable) tier,
+// with the hard block moved to SEVERE_BLOCK_DEPTH_M.
 export const IMPASSABLE_DEPTH_M = 0.3;
 
 // Hard block threshold — beyond common guidance for "impassable to most
@@ -65,6 +65,28 @@ export function floodSeverityTier(depthM: number): FloodSeverityTier {
 export const FLOOD_COST_MULTIPLIER: Record<FloodSeverityTier, number> = {
   NONE: 1, MODERATE: 3, HIGH: 10, SEVERE: Infinity,
 };
+
+export type DestinationFloodWarningLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+export interface DestinationFloodWarning {
+  level: DestinationFloodWarningLevel;
+  message: string;
+  depthM: number;
+}
+
+// A destination-specific warning — distinct wording from floodSeverityTier's
+// route-segment labels (NONE/MODERATE/HIGH/SEVERE) on purpose, so a "the
+// PATH is HIGH risk" statement and a "the DESTINATION is flooded" statement
+// are never visually confusable. Same underlying depth thresholds as the
+// rest of the app (15/30/50cm), just narrated for "should I even go here".
+export function destinationFloodWarning(depthM: number): DestinationFloodWarning | null {
+  if (depthM <= 0) return null;
+  const depthCm = depthM * 100;
+  if (depthCm < 15) return { level: 'LOW', message: 'Minor flooding possible at this destination.', depthM };
+  if (depthCm < 30) return { level: 'MEDIUM', message: 'Destination is partially flooded.', depthM };
+  if (depthCm < SEVERE_BLOCK_DEPTH_M * 100) return { level: 'HIGH', message: 'Destination is significantly flooded.', depthM };
+  return { level: 'CRITICAL', message: 'Emergency access may be compromised — destination is severely flooded.', depthM };
+}
 
 // How far from a precomputed flood-simulation drainage-graph node (Phase 3
 // output, ~37m node spacing — see data/scripts/build_drainage_graph.py
@@ -126,6 +148,16 @@ export interface RouteFound {
   avoidedRoads: AvoidedRoad[];
   segmentsTraversed: number;
   highRiskSegmentsTraversed: number;
+  /** Segments on THIS route's own path at HIGH or SEVERE simulated flood severity (SEVERE can only appear on the flood-blind normal route — every flood-aware mode excludes SEVERE edges from the graph entirely). */
+  floodedSegmentsOnPath: number;
+  /** % lower length-weighted risk score than the flood-blind "normal" route at this same timestep; null when the normal route itself has no risk to compare against (0 total risk) or wasn't found. Negative means this route is modelled as riskier than the flood-blind path happened to be. */
+  riskReductionVsNormalPct: number | null;
+  /** % lower risk score than this zone's flood-aware FASTEST route (0 for the fastest route itself); null on the rare case the fastest route has zero risk to compare against. */
+  riskReductionVsFastestPct: number | null;
+  /** Extra minutes versus this zone's flood-aware FASTEST route (0 for the fastest route itself). This is the "cost" of choosing a safer/balanced route. */
+  timePenaltyVsFastestMin: number;
+  /** Extra minutes versus the flood-blind "normal" route a non-flood-aware app would have given (null when the normal route wasn't found). */
+  timePenaltyVsNormalMin: number | null;
 }
 
 export interface RouteNotFound {
@@ -183,19 +215,66 @@ function findFloodDepthAtPolygons(pt: [number, number], floodFeatures: Feature[]
   return maxDepth;
 }
 
+// Spatial bucket index for findFloodDepthAtSimNodes, built once per distinct
+// simFeatures array and reused across every call against it — this function
+// is called once per sampled point on EVERY road segment (up to 3 samples x
+// 3000+ segments) and every infrastructure point, every time the active
+// frame changes, so a naive per-call linear scan over all nodes becomes
+// O(features x nodes): with Demo Mode's denser synthetic grid (lib/
+// demoEngine.ts, sized for 50m point coverage) this was tens of millions of
+// haversine calls per slider/preset change and froze the page — found via
+// live browser testing, not just profiling. Bucketing trades that for one
+// O(nodes) index build per frame plus a small constant number of candidates
+// per query; results are identical (the index is only a candidate filter —
+// the exact haversineKm check below still decides the real answer).
+const CELL_SIZE_DEG = 0.0005; // ~55m — a few cells comfortably cover FLOOD_NODE_INFLUENCE_RADIUS_KM (50m)
+const CELL_SEARCH_SPAN = 2; // check a 5x5 block of cells around the query point
+const simNodeIndexCache = new WeakMap<Feature[], Map<string, Feature[]>>();
+
+function cellKey(lng: number, lat: number): string {
+  return `${Math.floor(lng / CELL_SIZE_DEG)},${Math.floor(lat / CELL_SIZE_DEG)}`;
+}
+
+function getSimNodeIndex(simFeatures: Feature[]): Map<string, Feature[]> {
+  const cached = simNodeIndexCache.get(simFeatures);
+  if (cached) return cached;
+  const index = new Map<string, Feature[]>();
+  for (const f of simFeatures) {
+    if (f.geometry.type !== 'Point') continue;
+    const [lng, lat] = f.geometry.coordinates as [number, number];
+    const key = cellKey(lng, lat);
+    const bucket = index.get(key);
+    if (bucket) bucket.push(f);
+    else index.set(key, [f]);
+  }
+  simNodeIndexCache.set(simFeatures, index);
+  return index;
+}
+
 // Worst (max) depth among precomputed flood-simulation nodes (Phase 3 output
 // — Point features carrying depth_m at the active zone/timestep/scenario)
 // within FLOOD_NODE_INFLUENCE_RADIUS_KM of a point. Exported for reuse by
 // Phase 8's road/infrastructure impact (MapContainer.tsx), so routing and
 // impact status are never computed from two different depth lookups.
 export function findFloodDepthAtSimNodes(pt: [number, number], simFeatures: Feature[]): number {
+  if (simFeatures.length === 0) return 0;
+  const [lng, lat] = pt;
+  const index = getSimNodeIndex(simFeatures);
+  const baseX = Math.floor(lng / CELL_SIZE_DEG);
+  const baseY = Math.floor(lat / CELL_SIZE_DEG);
   let maxDepth = 0;
-  for (const f of simFeatures) {
-    if (f.geometry.type !== 'Point') continue;
-    const coord = f.geometry.coordinates as [number, number];
-    if (haversineKm(pt, coord) <= FLOOD_NODE_INFLUENCE_RADIUS_KM) {
-      const d = parseFloat(String(f.properties?.depth_m ?? 0));
-      if (d > maxDepth) maxDepth = d;
+  for (let dx = -CELL_SEARCH_SPAN; dx <= CELL_SEARCH_SPAN; dx++) {
+    for (let dy = -CELL_SEARCH_SPAN; dy <= CELL_SEARCH_SPAN; dy++) {
+      const bucket = index.get(`${baseX + dx},${baseY + dy}`);
+      if (!bucket) continue;
+      for (const f of bucket) {
+        if (f.geometry.type !== 'Point') continue;
+        const coord = f.geometry.coordinates as [number, number];
+        if (haversineKm(pt, coord) <= FLOOD_NODE_INFLUENCE_RADIUS_KM) {
+          const d = parseFloat(String(f.properties?.depth_m ?? 0));
+          if (d > maxDepth) maxDepth = d;
+        }
+      }
     }
   }
   return maxDepth;
@@ -315,13 +394,25 @@ export function buildRoadGraph(
 }
 
 export function findNearestNode(graph: RoadGraph, point: [number, number]): string | null {
+  return findNearestNodeWithDistance(graph, point)?.key ?? null;
+}
+
+/** Same nearest-node search as findNearestNode, but also reports the snap
+ * distance — used by the routing fallback chain (lib/computeSafeRoute.ts) to
+ * tell "a real nearby road node" apart from "the least-bad node in an
+ * extract that doesn't actually cover this point" (e.g. a geocoded location
+ * outside the pilot zone's road-network bbox), which should escalate to an
+ * external routing fallback rather than silently snapping to a node km away. */
+export function findNearestNodeWithDistance(
+  graph: RoadGraph, point: [number, number]
+): { key: string; distanceKm: number } | null {
   let best: string | null = null;
   let bestDist = Infinity;
   for (const [key, coord] of graph.nodeCoords.entries()) {
     const d = haversineKm(point, coord);
     if (d < bestDist) { bestDist = d; best = key; }
   }
-  return best;
+  return best ? { key: best, distanceKm: bestDist } : null;
 }
 
 const COST_WEIGHT: Record<RouteMode, number> = {
@@ -479,15 +570,83 @@ function riskLabel(score: number): RouteFound['riskLabel'] {
   return 'LOW';
 }
 
-// Computes all three routes (fastest/safest/balanced) between two points
-// already snapped to real road-network nodes. "Avoided roads" for
-// safest/balanced is the set of named roads the fastest route would have
-// used but this route didn't, each annotated with why (blocked + simulated
-// depth, or high modelled risk under current rainfall).
-export function computeRoutes(graph: RoadGraph, startKey: string, endKey: string): Record<RouteMode, RouteResult> {
+// Segments on a path (by node sequence) at HIGH or SEVERE flood severity —
+// the same tiers used to decide blocking/cost-penalty, counted here purely
+// for explanation text ("this route still crosses N at-risk segments").
+function countFloodedSegments(graph: RoadGraph, pathNodes: string[]): number {
+  let count = 0;
+  for (let i = 0; i < pathNodes.length - 1; i++) {
+    const edge = edgeLookup(graph, pathNodes[i], pathNodes[i + 1]);
+    if (edge && (edge.floodSeverity === 'HIGH' || edge.floodSeverity === 'SEVERE')) count++;
+  }
+  return count;
+}
+
+// Named roads present on `baselinePath` but not on `summary`'s own path,
+// each annotated with why THIS route left it out (blocked, high simulated
+// flood depth, or high modelled risk). Used to explain every route —
+// including "fastest" — against the flood-BLIND normal route, since a
+// flood-aware "fastest" route already silently excludes SEVERE-flooded
+// roads that a real non-flood-aware app would have used.
+function computeAvoidedRoads(
+  graph: RoadGraph,
+  baselinePathNodes: string[],
+  summary: ReturnType<typeof summarizePath>
+): AvoidedRoad[] {
+  const avoidedRoads: AvoidedRoad[] = [];
+  const seen = new Set<string>();
+  for (let i = 0; i < baselinePathNodes.length - 1; i++) {
+    const edge = edgeLookup(graph, baselinePathNodes[i], baselinePathNodes[i + 1]);
+    if (!edge) continue;
+    const usedByThisRoute = summary.roadKeysUsed.has(
+      `${edge.roadName}|${nodeKey([Math.min(edge.coords[0][0], edge.coords[1][0]), Math.min(edge.coords[0][1], edge.coords[1][1])])}`
+    );
+    if (usedByThisRoute || seen.has(edge.roadName)) continue;
+    if (edge.blocked) {
+      seen.add(edge.roadName);
+      avoidedRoads.push({ name: edge.roadName, reason: edge.blockReason! });
+    } else if (edge.floodSeverity === 'HIGH' || edge.floodSeverity === 'MODERATE') {
+      seen.add(edge.roadName);
+      avoidedRoads.push({
+        name: edge.roadName,
+        reason: `${edge.floodSeverity} simulated flood depth (${edge.floodDepthM.toFixed(2)}m) — high routing cost penalty (${edge.floodCostMultiplier}x)`,
+      });
+    } else if (edge.riskFactor > 0.4) {
+      seen.add(edge.roadName);
+      avoidedRoads.push({
+        name: edge.roadName,
+        reason: `High modelled risk (${edge.riskFactor.toFixed(2)}) — susceptibility ${edge.susceptibility?.toFixed(2) ?? 'n/a'} under current rainfall`,
+      });
+    }
+  }
+  return avoidedRoads.slice(0, 8);
+}
+
+// Computes all three flood-aware routes (fastest/safest/balanced) PLUS the
+// flood-blind "normal" baseline a non-flood-aware navigation app would give,
+// between two points already snapped to real road-network nodes — one call,
+// so every route's explanation (avoided roads, risk reduction, time
+// penalty) is measured against the exact same baseline computation.
+//
+// "Avoided roads" for EVERY mode (including fastest) is the set of named
+// roads the flood-blind normal route would have used but this route
+// didn't, each annotated with why. This is deliberately NOT relative to
+// the fastest flood-aware route: "fastest" already silently excludes
+// SEVERE-flooded roads (every flood-aware mode does — see dijkstra's
+// `edge.blocked` exclusion), so comparing it only to itself would wrongly
+// report "nothing avoided" for a route that in fact routed around real
+// flooding.
+export function computeRoutes(graph: RoadGraph, startKey: string, endKey: string): { routes: Record<RouteMode, RouteResult>; normalRouteComparison: NormalRouteComparison } {
   const results = {} as Record<RouteMode, RouteResult>;
   const fastestRaw = dijkstra(graph, startKey, endKey, 'fastest');
   const fastestSummary = fastestRaw ? summarizePath(graph, fastestRaw.path) : null;
+  const fastestRiskScore = fastestSummary && fastestSummary.distanceKm > 0 ? fastestSummary.riskWeightedSum / fastestSummary.distanceKm : null;
+
+  const normalRaw = dijkstra(graph, startKey, endKey, 'fastest', true);
+  const normalSummary = normalRaw ? summarizePath(graph, normalRaw.path) : null;
+  const normalRiskScore = normalSummary && normalSummary.distanceKm > 0 ? normalSummary.riskWeightedSum / normalSummary.distanceKm : null;
+  const normalFloodedSegments = normalRaw ? countFloodedSegments(graph, normalRaw.path) : 0;
+
   // If even a pure distance search (which already excludes blocked edges)
   // fails, check whether the two points are connected AT ALL in the raw
   // extract, ignoring flooding entirely — real bbox-clipped OSM data can
@@ -512,35 +671,9 @@ export function computeRoutes(graph: RoadGraph, startKey: string, endKey: string
       return;
     }
     const summary = summarizePath(graph, raw.path);
-    const avoidedRoads: AvoidedRoad[] = [];
-    if (fastestSummary && mode !== 'fastest') {
-      const seen = new Set<string>();
-      for (let i = 0; i < fastestRaw!.path.length - 1; i++) {
-        const edge = edgeLookup(graph, fastestRaw!.path[i], fastestRaw!.path[i + 1]);
-        if (!edge) continue;
-        const usedByThisRoute = summary.roadKeysUsed.has(
-          `${edge.roadName}|${nodeKey([Math.min(edge.coords[0][0], edge.coords[1][0]), Math.min(edge.coords[0][1], edge.coords[1][1])])}`
-        );
-        if (usedByThisRoute || seen.has(edge.roadName)) continue;
-        if (edge.blocked) {
-          seen.add(edge.roadName);
-          avoidedRoads.push({ name: edge.roadName, reason: edge.blockReason! });
-        } else if (edge.floodSeverity === 'HIGH' || edge.floodSeverity === 'MODERATE') {
-          seen.add(edge.roadName);
-          avoidedRoads.push({
-            name: edge.roadName,
-            reason: `${edge.floodSeverity} simulated flood depth (${edge.floodDepthM.toFixed(2)}m) — high routing cost penalty (${edge.floodCostMultiplier}x)`,
-          });
-        } else if (edge.riskFactor > 0.4) {
-          seen.add(edge.roadName);
-          avoidedRoads.push({
-            name: edge.roadName,
-            reason: `High modelled risk (${edge.riskFactor.toFixed(2)}) — susceptibility ${edge.susceptibility?.toFixed(2) ?? 'n/a'} under current rainfall`,
-          });
-        }
-      }
-    }
+    const avoidedRoads = normalRaw ? computeAvoidedRoads(graph, normalRaw.path, summary) : [];
     const riskScore = summary.distanceKm > 0 ? summary.riskWeightedSum / summary.distanceKm : 0;
+
     results[mode] = {
       mode, found: true,
       path: summary.positions,
@@ -548,13 +681,46 @@ export function computeRoutes(graph: RoadGraph, startKey: string, endKey: string
       etaMinutes: summary.etaMinutes,
       estimatedRiskScore: riskScore,
       riskLabel: riskLabel(riskScore),
-      avoidedRoads: avoidedRoads.slice(0, 8),
+      avoidedRoads,
       segmentsTraversed: summary.segmentsTraversed,
       highRiskSegmentsTraversed: summary.highRiskSegmentsTraversed,
+      floodedSegmentsOnPath: countFloodedSegments(graph, raw.path),
+      riskReductionVsNormalPct: normalRiskScore !== null && normalRiskScore > 0 ? ((normalRiskScore - riskScore) / normalRiskScore) * 100 : null,
+      riskReductionVsFastestPct: fastestRiskScore !== null && fastestRiskScore > 0 ? ((fastestRiskScore - riskScore) / fastestRiskScore) * 100 : null,
+      timePenaltyVsFastestMin: fastestSummary ? summary.etaMinutes - fastestSummary.etaMinutes : 0,
+      timePenaltyVsNormalMin: normalSummary ? summary.etaMinutes - normalSummary.etaMinutes : null,
     };
   });
 
-  return results;
+  const normalRouteComparison: NormalRouteComparison = !normalRaw || !normalSummary
+    ? {
+        normalRoute: {
+          mode: 'fastest', found: false,
+          reason: 'No route available — these two locations are not connected by any road in this zone\'s real road-network extract, independent of flooding.',
+        },
+        floodedSegmentsOnNormalRoute: 0,
+      }
+    : {
+        normalRoute: {
+          mode: 'fastest', found: true,
+          path: normalSummary.positions,
+          distanceKm: normalSummary.distanceKm,
+          etaMinutes: normalSummary.etaMinutes,
+          estimatedRiskScore: normalRiskScore ?? 0,
+          riskLabel: riskLabel(normalRiskScore ?? 0),
+          avoidedRoads: [],
+          segmentsTraversed: normalSummary.segmentsTraversed,
+          highRiskSegmentsTraversed: normalSummary.highRiskSegmentsTraversed,
+          floodedSegmentsOnPath: normalFloodedSegments,
+          riskReductionVsNormalPct: 0,
+          riskReductionVsFastestPct: fastestRiskScore !== null && fastestRiskScore > 0 ? ((fastestRiskScore - (normalRiskScore ?? 0)) / fastestRiskScore) * 100 : null,
+          timePenaltyVsFastestMin: fastestSummary ? normalSummary.etaMinutes - fastestSummary.etaMinutes : 0,
+          timePenaltyVsNormalMin: 0,
+        },
+        floodedSegmentsOnNormalRoute: normalFloodedSegments,
+      };
+
+  return { routes: results, normalRouteComparison };
 }
 
 export interface NormalRouteComparison {
@@ -563,44 +729,4 @@ export interface NormalRouteComparison {
    * currently at HIGH or SEVERE simulated flood severity — 0 when the
    * normal and flood-aware routes coincide or no flooding exists. */
   floodedSegmentsOnNormalRoute: number;
-}
-
-// "NORMAL ROUTE" (Phase 6 / Step: "Show NORMAL ROUTE vs FLOOD-AWARE SAFE
-// ROUTE"): the shortest path a flood-blind navigation app would give —
-// pure distance, blocked edges included, no risk/flood cost at all. Compared
-// against the existing flood-aware "fastest" route so the UI can show
-// concretely what flood-awareness changes (extra distance/time, and how many
-// now-flooded segments the naive route would have driven through).
-export function computeNormalRoute(graph: RoadGraph, startKey: string, endKey: string): NormalRouteComparison {
-  const raw = dijkstra(graph, startKey, endKey, 'fastest', true);
-  if (!raw) {
-    return {
-      normalRoute: {
-        mode: 'fastest', found: false,
-        reason: 'No route available — these two locations are not connected by any road in this zone\'s real road-network extract, independent of flooding.',
-      },
-      floodedSegmentsOnNormalRoute: 0,
-    };
-  }
-  const summary = summarizePath(graph, raw.path);
-  let floodedSegments = 0;
-  for (let i = 0; i < raw.path.length - 1; i++) {
-    const edge = edgeLookup(graph, raw.path[i], raw.path[i + 1]);
-    if (edge && (edge.floodSeverity === 'HIGH' || edge.floodSeverity === 'SEVERE')) floodedSegments++;
-  }
-  const riskScore = summary.distanceKm > 0 ? summary.riskWeightedSum / summary.distanceKm : 0;
-  return {
-    normalRoute: {
-      mode: 'fastest', found: true,
-      path: summary.positions,
-      distanceKm: summary.distanceKm,
-      etaMinutes: summary.etaMinutes,
-      estimatedRiskScore: riskScore,
-      riskLabel: riskLabel(riskScore),
-      avoidedRoads: [],
-      segmentsTraversed: summary.segmentsTraversed,
-      highRiskSegmentsTraversed: summary.highRiskSegmentsTraversed,
-    },
-    floodedSegmentsOnNormalRoute: floodedSegments,
-  };
 }

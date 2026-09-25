@@ -1,4 +1,4 @@
-"""Downloads REAL OpenStreetMap data for FLOODWATCH via the public Overpass API.
+"""Downloads REAL OpenStreetMap data for FLOODCAST via the public Overpass API.
 
 Fetches, per the Excel source-of-truth (category D/C/J, RECOMMENDATION=PRIMARY):
   - Greater Mumbai administrative boundary (Mumbai City + Mumbai Suburban districts,

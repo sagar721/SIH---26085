@@ -1,0 +1,24 @@
+groups:
+  - name: mflood-backend
+    rules:
+      - alert: MFloodSimulationFailureRateHigh
+        expr: rate(mflood_simulation_jobs_total{status="failed"}[10m]) / clamp_min(rate(mflood_simulation_jobs_total[10m]), 0.001) > 0.10
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: M-FLOOD simulation failure rate is above 10 percent
+      - alert: MFloodReadinessProbeFailing
+        expr: rate(mflood_http_requests_total{path="/api/v1/health/ready",status!="200"}[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: M-FLOOD readiness probe is failing
+      - alert: MFloodAuthFailureRateHigh
+        expr: rate(mflood_auth_failures_total[10m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: M-FLOOD authentication failure rate is elevated — possible credential-stuffing or misconfiguration

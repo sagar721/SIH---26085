@@ -88,7 +88,7 @@ export interface RainfallTrendPoint { rainfallMmHr: number; minutesFromNow: numb
 // null whenever the trend doesn't actually support a projection: too few
 // points, a flat/falling trend, or capacity already exceeded (nothing left
 // to project toward). Called out explicitly in
-// FLOODWATCH_V3_DESIGN_SPEC.md §4.2.
+// FLOODCAST_V3_DESIGN_SPEC.md §4.2.
 export function estimateMinutesToCapacityThreshold(
   trend: RainfallTrendPoint[],
   drainageBlockagePct: number

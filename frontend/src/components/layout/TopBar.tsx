@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { CloudRain, History, Radio } from 'lucide-react';
+import { CloudRain, History, Radio, SlidersHorizontal } from 'lucide-react';
 import { SystemStatus } from './SystemStatus';
 import { useUIStore } from '../../stores/useUIStore';
 import { useZoneStore } from '../../stores/useZoneStore';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useRainfallAwareRisk } from '../../api/hooks/useRainfallAwareRisk';
 import { useRainfallStatusStore } from '../../stores/useRainfallStatusStore';
 import { rainfallService } from '../../api/services/RainfallDataService';
@@ -10,7 +11,7 @@ import { zoneAreaKm2 } from '../../lib/geo';
 
 // Stage mapping is a direct, undramatized read of the existing zone
 // severity label — never a separately-invented number. See
-// FLOODWATCH_V3_DESIGN_SPEC.md §2.3.
+// FLOODCAST_V3_DESIGN_SPEC.md §2.3.
 const STAGE_META: Record<string, { stage: number; ok: boolean }> = {
   LOW: { stage: 0, ok: true },
   MODERATE: { stage: 1, ok: false },
@@ -20,6 +21,7 @@ const STAGE_META: Record<string, { stage: number; ok: boolean }> = {
 
 export const TopBar: React.FC = () => {
   const { appMode, setAppMode, viewMode } = useUIStore();
+  const { mode, setMode } = useSimulationStore();
   const { activeZone } = useZoneStore();
   const { zoneSeverity } = useRainfallAwareRisk();
   const rainfallStatus = useRainfallStatusStore((s) => s.status);
@@ -63,7 +65,7 @@ export const TopBar: React.FC = () => {
           <CloudRain className="w-4.5 h-4.5 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-sm font-bold tracking-wide text-foreground leading-tight">FLOODWATCH</h1>
+          <h1 className="text-sm font-bold tracking-wide text-foreground leading-tight">FLOODCAST</h1>
           <p className="text-[9.5px] text-muted-foreground tracking-wider uppercase leading-tight">Urban Flood Intelligence</p>
         </div>
       </div>
@@ -84,6 +86,34 @@ export const TopBar: React.FC = () => {
       )}
 
       <div className="flex-1" />
+
+      <div
+        className="flex items-center bg-muted rounded-full p-0.5 shrink-0"
+        title={
+          mode === 'live'
+            ? 'Live Mode: real observed rainfall and derived nowcast only, auto-updating. Manual controls are disabled.'
+            : 'Demo Mode — Scenario Simulation (Hypothetical): a self-contained, illustrative simulation for exploration and presentation, never real observed data.'
+        }
+      >
+        <button
+          onClick={() => setMode('live')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            mode === 'live' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <Radio className="w-3 h-3" /> Live
+        </button>
+        <button
+          onClick={() => setMode('demo')}
+          className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            mode === 'demo' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          <SlidersHorizontal className="w-3 h-3" /> Demo
+        </button>
+      </div>
+
+      <div className="hidden lg:block h-6 w-px bg-border shrink-0" />
 
       <div className="flex items-center bg-muted rounded-full p-0.5 shrink-0">
         <button

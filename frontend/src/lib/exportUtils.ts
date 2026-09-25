@@ -78,7 +78,7 @@ export function openPrintSummaryReport(data: SummaryReportData) {
 <html>
 <head>
 <meta charset="utf-8" />
-<title>FLOODWATCH Summary Report — ${data.zoneName}</title>
+<title>FLOODCAST Summary Report — ${data.zoneName}</title>
 <style>
   body { font-family: -apple-system, Segoe UI, sans-serif; color: #111; padding: 32px; max-width: 720px; margin: 0 auto; }
   h1 { font-size: 20px; margin-bottom: 4px; }
@@ -95,7 +95,7 @@ export function openPrintSummaryReport(data: SummaryReportData) {
 </style>
 </head>
 <body>
-  <h1>FLOODWATCH Summary Report</h1>
+  <h1>FLOODCAST Summary Report</h1>
   <p class="subtitle">${data.zoneName} &middot; Generated ${data.generatedAt}</p>
 
   <div class="section">
@@ -131,7 +131,7 @@ export function openPrintSummaryReport(data: SummaryReportData) {
   <p class="disclaimer">
     This report combines OBSERVED real-time rainfall (JAXA GSMaP) with a MODELLED, DEM-derived susceptibility index
     and a SIMULATED flood-depth proxy. It has not been calibrated or validated against any observed flood extent.
-    No accuracy metric (IoU, F1, or otherwise) is claimed. See the Methodology panel in FLOODWATCH for full provenance.
+    No accuracy metric (IoU, F1, or otherwise) is claimed. See the Methodology panel in FLOODCAST for full provenance.
   </p>
 
   <script>window.onload = () => setTimeout(() => window.print(), 200);</script>

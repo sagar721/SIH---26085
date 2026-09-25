@@ -6,13 +6,15 @@ import { mockAdapter } from '../adapters/MockAdapter';
 import { realAdapter } from '../adapters/RealDataAdapter';
 import type { FloodRiskSummary } from '../interfaces/FloodDataAdapter';
 import { findFloodDepthAtSimNodes, floodSeverityTier } from '../../lib/routingEngine';
+import { generateDemoFloodFrame } from '../../lib/demoEngine';
 import { FLOOD_TIMESTEPS_MIN } from '../../types/floodSimulation';
+import type { FloodSimulationFrame } from '../../types/floodSimulation';
 
-// Phase 8 — road/infrastructure flood impact is grounded in the SAME
-// precomputed drainage-graph flood-simulation frame (Phase 1-4) that Phase 6
-// routing uses, not a separate/looser estimate. "design_storm" is used here
-// (matching the map's default flood layer — see useFloodSimulationFrame.ts);
-// "observed" would be all-zero for the acquired real rainfall window anyway.
+// Road/infrastructure flood impact is grounded in the SAME precomputed
+// drainage-graph flood-simulation frame that routing uses, not a separate/
+// looser estimate. "design_storm" is used here (matching the map's default
+// flood layer — see useFloodSimulationFrame.ts); "observed" would be
+// all-zero for the acquired real rainfall window anyway.
 const IMPACT_SCENARIO = 'design_storm' as const;
 
 function enrichInfraWithSimulatedDepth(infra: FeatureCollection, simFeatures: Feature[]): FeatureCollection {
@@ -61,7 +63,7 @@ export const useFloodData = () => {
   const activeZone = useZoneStore((state) => state.activeZone);
   const activeZoneId = activeZone.id;
 
-  const { timeIndex, availableTimestamps, scenarioMultiplier, drainageBlockage } = useSimulationStore();
+  const { mode, timeIndex, availableTimestamps, scenarioMultiplier, drainageBlockage } = useSimulationStore();
 
   const [rainfallFeatures, setRainfallFeatures] = useState<FeatureCollection | null>(null);
   const [floodFeatures, setFloodFeatures] = useState<FeatureCollection | null>(null);
@@ -85,7 +87,16 @@ export const useFloodData = () => {
     realAdapter.getRainfallData(activeZoneId, time).then(setRainfallFeatures);
     mockAdapter.getFloodData(activeZoneId, time, scenarioMultiplier, drainageBlockage).then(setFloodFeatures);
 
-    const simFramePromise = realAdapter.getFloodSimulationFrame(activeZoneId, tMin, IMPACT_SCENARIO);
+    // In Demo Mode, road/infrastructure impact is grounded in the SAME
+    // self-contained synthetic engine that drives the map's flood layer and
+    // routing (see lib/demoEngine.ts) — never the fixed design_storm frame,
+    // which doesn't react to the Demo Mode controls at all. This is the one
+    // substitution point: enrichRoadsWithSimulatedDepth/
+    // enrichInfraWithSimulatedDepth below are completely unchanged, they
+    // just receive a different (but same-shaped) frame.
+    const simFramePromise: Promise<FloodSimulationFrame> = mode === 'demo'
+      ? Promise.resolve(generateDemoFloodFrame(activeZoneId, scenarioMultiplier, drainageBlockage, timeIndex))
+      : realAdapter.getFloodSimulationFrame(activeZoneId, tMin, IMPACT_SCENARIO);
 
     Promise.all([
       realAdapter.getInfrastructureData(activeZoneId, time, scenarioMultiplier, drainageBlockage),
@@ -102,7 +113,7 @@ export const useFloodData = () => {
     });
 
     mockAdapter.getZoneRiskSummary(activeZoneId, time, scenarioMultiplier, drainageBlockage).then(setRiskSummary);
-  }, [activeZoneId, timeIndex, availableTimestamps, scenarioMultiplier, drainageBlockage]);
+  }, [activeZoneId, timeIndex, availableTimestamps, scenarioMultiplier, drainageBlockage, mode]);
 
   return { rainfallFeatures, floodFeatures, infraFeatures, roadsFeatures, riskSummary };
 };

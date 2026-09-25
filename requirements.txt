@@ -1,4 +1,4 @@
-# FLOODWATCH (SIH26085) — Python dependencies for data/scripts/*.py and
+# FLOODCAST (SIH26085) — Python dependencies for data/scripts/*.py and
 # data/raw/rainfall/scripts/*.py. Install with: pip install -r requirements.txt
 numpy>=2.3
 pandas>=2.3
